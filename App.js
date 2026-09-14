@@ -1,16 +1,29 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Alert, Image, Modal,} from 'react-native';
+import React,{ useEffect, useState, useRef } from 'react';
+import { 
+  Alert, 
+  Image, 
+  Modal, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View,
+} from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
-import { CameraView } from 'expo-camera';
-import * as Camera from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
-import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
+import { 
+  CameraView, 
+  useCameraPermissions, 
+} from 'expo-camera';
+import * as MediaLibrary from 'expo-media-library/legacy';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
 
 
-function CameraScreen(){
+function CameraScreen() {
   const cameraRef = useRef(null);
 
   const [facing, setFacing] = useState('back');
@@ -18,7 +31,7 @@ function CameraScreen(){
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [cameraPermission, requestCameraPermission] = Camera.useCameraPermissions();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions({writeOnly: true});
   
   async function requestPermissions() {
@@ -46,6 +59,13 @@ function CameraScreen(){
       );
     }
   }
+
+  useEffect(() => {
+    if (!cameraPermission?.granted || !mediaPermission?.granted) {
+      requestPermissions();
+    }
+  }, []);
+
   function toggleCameraFacing() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   }
@@ -236,22 +256,17 @@ export function Map({location, text}){
     <View style={styles.mapContainer}>
       <MapView 
         loadingEnabled={true}
-        region={
-          location
-           ? {
-              
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.001,
-              longitudeDelta: 0.001,
-            } :
-            {
-              latitude: 0,
-              longitude: 0,
-              latitudeDelta: 0,
-              longitudeDelta: 1000,
-            }
-        }
+        region={location? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.001,
+          longitudeDelta: 0.001,
+        } : {
+          latitude: 0,
+          longitude: 0,
+          latitudeDelta: 0,
+          longitudeDelta: 1000,
+        }}
         style={styles.map}
         >
           {location && (
@@ -292,8 +307,9 @@ export function TelaSegura({location,text}){
             location={location}
             text={text}
           />
-          
-          <CameraScreen/>
+          <SafeAreaProvider>
+            <CameraScreen/>
+          </SafeAreaProvider>
         </>
       ) : (
         <View style={styles.container}>
@@ -376,5 +392,162 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "50%",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
+
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    backgroundColor: '#fff',
+  },
+
+  permissionTitle: {
+    marginBottom: 12,
+    color: '#111827',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
+  permissionMessage: {
+    marginBottom: 25,
+    color: '#4b5563',
+    fontSize: 16,
+    lineHeight: 23,
+    textAlign: 'center',
+  },
+
+  permissionButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: '#2563eb',
+  },
+
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  cameraContainer: {
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+
+  buttonContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: 30,
+    left: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 35,
+  },
+
+  flipButton: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
+
+  captureButton: {
+    width: 76,
+    height: 76,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: 38,
+    backgroundColor: '#fff',
+  },
+
+  disabledButton: {
+    opacity: 0.5,
+  },
+
+  icon: {
+    width: '65%',
+    height: '65%',
+    resizeMode: 'contain',
+  },
+
+  captureIcon: {
+    width: '65%',
+    height: '65%',
+    resizeMode: 'contain',
+  },
+
+  savingContainer: {
+    position: 'absolute',
+    top: 20,
+    alignSelf: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+
+  savingText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.96)',
+  },
+
+  previewImage: {
+    width: '100%',
+    height: '80%',
+  },
+
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+    backgroundColor: '#fff',
+  },
+
+  closeIcon: {
+    width: '60%',
+    height: '60%',
+    resizeMode: 'contain',
+  },
+
+  savedMessage: {
+    position: 'absolute',
+    bottom: 25,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
