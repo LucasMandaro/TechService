@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.techservice.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -44,7 +45,9 @@
         {
           "photosPermission": "Permita que o aplicativo acesse suas fotos.",
           "savePhotosPermission": "Permita que o aplicativo salve fotos na galeria.",
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ]
     ]
