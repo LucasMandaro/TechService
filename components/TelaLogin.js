@@ -58,8 +58,8 @@ export default function TelaLogin({ navigation, onLogin }) {
                 </Text>
             </View>
 
-            <TextInput style={styles.input} placeholder="E-mail" value={usuario} onChange={setUsuario} autoCapitalize="none" keyboardType="email-address" />
-            <TextInput style={styles.input} placeholder="Senha" value={senha} onChange={setSenha} secureTextEntry />
+            <TextInput style={styles.input} placeholder="E-mail" value={usuario} onChangeText={setUsuario} autoCapitalize="none" keyboardType="email-address" />
+            <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
             <TouchableOpacity style={styles.button} onPress={() => entrar(false)} disabled={ativo}>
                 <Text style={styles.buttonText}>{ativo ? 'Entrando...' : 'Entrar'}</Text>
             </TouchableOpacity>
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 24
     },
-    brand: {
+    logoView: {
         alignItems: 'center',
         marginBottom: 30
     },
