@@ -8,6 +8,7 @@ export default function TelaLogin({ navigation, onLogin }) {
     const [usuario, setUsuario] = useState('');
     const [senha, setSenha] = useState('');
     const [ativo, setAtivo] = useState(false);
+    const [mostrarSenha, setMostrarSenha] = useState(false);
 
     async function entrar(useBiometrics = false) {
         if (!usuario.trim() || !senha) {
@@ -114,8 +115,11 @@ export default function TelaLogin({ navigation, onLogin }) {
                 placeholderTextColor="#94a3b8"
                 value={senha}
                 onChangeText={setSenha}
-                secureTextEntry
+                secureTextEntry={mostrarSenha}
             />
+            <TouchableOpacity onPress={() => setMostrarSenha (!mostrarSenha)}>
+                <Text>{mostrarSenha ? "mostrar" : "mostrar"}</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
                 style={styles.button}
@@ -203,7 +207,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingHorizontal: 16,
         marginBottom: 12,
-        fontSize: 16
+        fontSize: 16,
+        color: '#000'
     },
     button: {
         height: 52,

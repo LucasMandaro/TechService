@@ -8,6 +8,7 @@ export default function TelaCadastro({ navigation }) {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmacao, setConfirmacao] = useState('');
+    const [mostrarSenha, setMostrarSenha] = useState(false)
 
     async function cadastrar() {
         if (!nome.trim() || !email.trim() || !senha)
@@ -82,7 +83,7 @@ export default function TelaCadastro({ navigation }) {
                 placeholderTextColor="#94a3b8"
                 value={senha}
                 onChangeText={setSenha}
-                secureTextEntry
+                secureTextEntry={mostrarSenha}
             />
 
             <TextInput
@@ -91,8 +92,12 @@ export default function TelaCadastro({ navigation }) {
                 placeholderTextColor="#94a3b8"
                 value={confirmacao}
                 onChangeText={setConfirmacao}
-                secureTextEntry
+                secureTextEntry={mostrarSenha}
             />
+
+            <TouchableOpacity onPress={() => setMostrarSenha (!mostrarSenha)}>
+                <Text>{mostrarSenha ? "mostrar" : "mostrar"}</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
                 style={styles.button}
@@ -158,7 +163,8 @@ const styles = StyleSheet.create({
         borderColor: '#dbe3ef',
         borderRadius: 12,
         paddingHorizontal: 16,
-        marginBottom: 12
+        marginBottom: 12,
+        color: '#000'
     },
     button: {
         height: 52,
