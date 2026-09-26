@@ -7,7 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.techservice.app",
+      "config":{
+        "googleMapsApiKey": "AIzaSyBXzz9L7j1-PEHNpDjCAAEFV29MsD9URAM"
+      }
     },
     "android": {
       "config": {
@@ -30,12 +34,6 @@
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.READ_MEDIA_IMAGES"
       ]
-    },
-    "ios": {
-      "bundleIdentifier": "com.techservice.app",
-      "config":{
-        "googleMapsApiKey": "AIzaSyBXzz9L7j1-PEHNpDjCAAEFV29MsD9URAM"
-      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
