@@ -110,7 +110,7 @@ export default function NovaVisita({ navigation, route, user }) {
         </View>
 
         <Text style={styles.label}>Cliente *</Text>
-        <TextInput style={style.input} placeholder='Nome do cliente' value={cliente} onChangeText={setCliente} />
+        <TextInput style={styles.input} placeholder='Nome do cliente' value={cliente} onChangeText={setCliente} />
 
         <Text style={styles.label}>Endereço / local</Text>
         <TextInput style={styles.input} placeholder="Rua, número, cidade" value={endereco} onChangeText={setEndereco} />
