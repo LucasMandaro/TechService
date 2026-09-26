@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from "react-native";
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../storage';
@@ -50,6 +50,7 @@ export default function TelaLogin({ navigation, onLogin }) {
     return (
         <View style={styles.container}>
             <View style={styles.logoView}>
+                <Image source={require('../assets/logo.png')} style={styles.imageLogo} resizeMode="contain"/>
                 <Text style={styles.title}>
                     TechService
                 </Text>
@@ -57,9 +58,8 @@ export default function TelaLogin({ navigation, onLogin }) {
                     Visita técnica em campo
                 </Text>
             </View>
-
-            <TextInput style={styles.input} placeholder="E-mail" value={usuario} onChangeText={setUsuario} autoCapitalize="none" keyboardType="email-address" />
-            <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
+            <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#94a3b8" value={usuario} onChangeText={setUsuario} autoCapitalize="none" keyboardType="email-address" />
+            <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#94a3b8" value={senha} onChangeText={setSenha} secureTextEntry />
             <TouchableOpacity style={styles.button} onPress={() => entrar(false)} disabled={ativo}>
                 <Text style={styles.buttonText}>{ativo ? 'Entrando...' : 'Entrar'}</Text>
             </TouchableOpacity>
@@ -95,6 +95,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingTop: 17,
         marginBottom: 12
+    },
+    imageLogo: {
+        width: 64,
+        height: 64,
     },
     title: {
         fontSize: 30,

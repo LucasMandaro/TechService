@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from '../storage';
 
@@ -35,12 +35,13 @@ export default function TelaCadastro({ navigation }) {
     }
 
     return <View style={styles.container}>
+        <Image source={require('../assets/logo.png')} style={styles.imageLogo} resizeMode="contain"/>
         <Text style={styles.title}>Criar conta</Text>
         <Text style={styles.subtitle}>Cadastre-se no TechService.</Text>
-        <TextInput style={styles.input} placeholder="Nome completo" value={nome} onChangeText={setnome} />
-        <TextInput style={styles.input} placeholder="E-mail" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-        <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
-        <TextInput style={styles.input} placeholder="Confirmar senha" value={confirmacao} onChangeText={setConfirmacao} secureTextEntry />
+        <TextInput style={styles.input} placeholder="Nome completo" placeholderTextColor="#94a3b8" value={nome} onChangeText={setnome} />
+        <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#94a3b8" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+        <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#94a3b8" value={senha} onChangeText={setSenha} secureTextEntry />
+        <TextInput style={styles.input} placeholder="Confirmar senha" placeholderTextColor="#94a3b8" value={confirmacao} onChangeText={setConfirmacao} secureTextEntry />
         <TouchableOpacity style={styles.button} onPress={cadastrar}>
             <Text style={styles.buttonText}>Cadastrar</Text>
         </TouchableOpacity>
