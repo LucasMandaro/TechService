@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import TelaLogin from './components/TelaLogin.js';
 import TelaCadastro from './components/TelaCadastro.js';
+import CameraScreen from './components/CameraScreen.js';
 import Dashboard from './components/Dashboard.js';
 import NovaVisita from './components/NovaVisita.js';
 import { STORAGE_KEYS } from './storage';
