@@ -4,7 +4,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 import TelaLogin from './components/TelaLogin.js';
 import TelaCadastro from './components/TelaCadastro.js';
@@ -15,8 +15,10 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [contaLembrada, setContaLembrada] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [travado, setTravado] = useState(false);
+  const [autenticandoBiometria, setAutenticandoBiometria] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -38,6 +40,11 @@ export default function App() {
           } else {
             setSession(parsed);
           }
+        } else{
+          const lembrada = await AsyncStorage.getItem(STORAGE_KEYS.LAST_ACCOUNT);
+          if (lembrada){
+            setContaLembrada(JSON.parse(lembrada));
+          }
         }
       }finally{
         setCarregando(false);
@@ -53,6 +60,10 @@ export default function App() {
       STORAGE_KEYS.SESSION,
       JSON.stringify(sessionUser)
     );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.LAST_ACCOUNT,
+      JSON.stringify(sessionUser)
+    );
     setSession(sessionUser);
   }
 
@@ -64,12 +75,45 @@ export default function App() {
       STORAGE_KEYS.SESSION,
       JSON.stringify(sessionUser)
     );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.LAST_ACCOUNT,
+      JSON.stringify(sessionUser)
+    );
     setSession(sessionUser);
   }
 
   async function logout() {
+    const salvo = await AsyncStorage.getItem(STORAGE_KEYS.SESSION);
+    if (salvo){
+      await AsyncStorage.setItem(STORAGE_KEYS.LAST_ACCOUNT, salvo);
+      setContaLembrada(JSON.parse(salvo));
+    }
     await AsyncStorage.removeItem(STORAGE_KEYS.SESSION);
     setSession(null);
+  }
+
+  async function trocarConta() {
+    await AsyncStorage.removeItem(STORAGE_KEYS.LAST_ACCOUNT);
+    setContaLembrada(null);
+  }
+
+  async function entrarComBiometria() {
+    setAutenticandoBiometria(true);
+    try{
+      const hardware = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = hardware && await LocalAuthentication.isEnrolledAsync();
+      if (!enrolled){
+        Alert.alert('Biometria indisponível', 'Cadastre uma biometria nas configurações do aparelho para usar esse atalho.');
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Entre no TechService' });
+      if (result.success){
+        await AsyncStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(contaLembrada));
+        setSession(contaLembrada);
+      }
+    }finally{
+      setAutenticandoBiometria(false);
+    }
   }
 
   if (carregando || travado){
@@ -85,6 +129,28 @@ export default function App() {
         <StatusBar barStyle="dark-content"/>
         <BottomTabs user={session} onUpdateUser={onUpdateUser} onLogout={logout}/>
       </>
+    );
+  }
+
+  if (contaLembrada){
+    return (
+      <View style={styles.biometriaContainer}>
+        <StatusBar barStyle="dark-content"/>
+        <Text style={styles.biometriaTitulo}>Bem-vindo de volta,</Text>
+        <Text style={styles.biometriaNome}>{contaLembrada.nome}</Text>
+        <TouchableOpacity
+          style={styles.biometriaBotao}
+          onPress={entrarComBiometria}
+          disabled={autenticandoBiometria}
+        >
+          <Text style={styles.biometriaBotaoTexto}>
+            {autenticandoBiometria ? 'Verificando...' : '🔒 Entrar com biometria'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={trocarConta}>
+          <Text style={styles.biometriaLink}>Entrar com outra conta</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -112,4 +178,38 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#f8fafc'
   },
+  biometriaContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#f8fafc'
+  },
+  biometriaTitulo: { 
+    color: '#64748b', 
+    fontSize: 16 
+  },
+  biometriaNome: { 
+    color: '#0f172a', 
+    fontSize: 26, 
+    fontWeight: '800', 
+    marginTop: 4, 
+    marginBottom: 30 
+  },
+  biometriaBotao: {
+    backgroundColor: '#2563eb',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    marginBottom: 18
+  },
+  biometriaBotaoTexto: { 
+    color: '#fff', 
+    fontWeight: '800', 
+    fontSize: 16 
+  },
+  biometriaLink: { 
+    color: '#64748b', 
+    fontWeight: '600' 
+  }
 });
