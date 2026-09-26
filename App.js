@@ -8,9 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import TelaLogin from './components/TelaLogin.js';
 import TelaCadastro from './components/TelaCadastro.js';
-import CameraScreen from './components/CameraScreen.js';
-import Dashboard from './components/Dashboard.js';
-import NovaVisita from './components/NovaVisita.js';
+import BottomTabs from './Bottomtabs.js';
 import { STORAGE_KEYS } from './storage';
 
 const Stack = createNativeStackNavigator();
@@ -58,6 +56,17 @@ export default function App() {
     setSession(sessionUser);
   }
 
+  async function onUpdateUser(userAtualizado) {
+    const sessionUser = {
+      ...session, ...userAtualizado
+    };
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.SESSION,
+      JSON.stringify(sessionUser)
+    );
+    setSession(sessionUser);
+  }
+
   async function logout() {
     await AsyncStorage.removeItem(STORAGE_KEYS.SESSION);
     setSession(null);
@@ -70,33 +79,26 @@ export default function App() {
     </View>;
   }
 
+  if (session){
+    return(
+      <>
+        <StatusBar barStyle="dark-content"/>
+        <BottomTabs user={session} onUpdateUser={onUpdateUser} onLogout={logout}/>
+      </>
+    );
+  }
+
   return (
     <NavigationContainer>
       <StatusBar barStyle="dark-content"/>
       <Stack.Navigator screenOptions={{ headerShown: false}}>
-        {session ? (
-          <>
-            <Stack.Screen name="Dashboard">
-              {(props) => <Dashboard {...props} user={session} onLogout={logout}/> }
-            </Stack.Screen>
-            <Stack.Screen name="NovaVisita">
-              {(props) => <NovaVisita {...props} user={session} />}
-            </Stack.Screen>
-            <Stack.Screen name="Camera">
-              {(props) => <CameraScreen {...props} />}
-            </Stack.Screen>
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login">
-              {(props) => <TelaLogin {...props} onLogin={onLogin} />}
-            </Stack.Screen>
-            <Stack.Screen 
-              name="Cadastro" 
-              component={TelaCadastro} 
-            />
-          </>
-        )}
+        <Stack.Screen name='Login'>
+          {(props) => <TelaLogin {...props} onLogin={onLogin} /> }
+        </Stack.Screen>
+        <Stack.Screen
+          name='Cadastro'
+          component={TelaCadastro}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
