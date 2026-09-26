@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from '../storage';
 
@@ -34,21 +34,84 @@ export default function TelaCadastro({ navigation }) {
         );
     }
 
-    return <View style={styles.container}>
-        <Image source={require('../assets/logo.png')} style={styles.imageLogo} resizeMode="contain"/>
-        <Text style={styles.title}>Criar conta</Text>
-        <Text style={styles.subtitle}>Cadastre-se no TechService.</Text>
-        <TextInput style={styles.input} placeholder="Nome completo" placeholderTextColor="#94a3b8" value={nome} onChangeText={setnome} />
-        <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#94a3b8" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-        <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#94a3b8" value={senha} onChangeText={setSenha} secureTextEntry />
-        <TextInput style={styles.input} placeholder="Confirmar senha" placeholderTextColor="#94a3b8" value={confirmacao} onChangeText={setConfirmacao} secureTextEntry />
-        <TouchableOpacity style={styles.button} onPress={cadastrar}>
-            <Text style={styles.buttonText}>Cadastrar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.link}>Voltar para login</Text>
-        </TouchableOpacity>
-    </View>
+    return (
+    <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+        <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+        >
+            <Image
+                source={require('../assets/logo.png')}
+                style={styles.imageLogo}
+                resizeMode="contain"
+            />
+
+            <Text style={styles.title}>
+                Criar conta
+            </Text>
+
+            <Text style={styles.subtitle}>
+                Cadastre-se no TechService.
+            </Text>
+
+            <TextInput
+                style={styles.input}
+                placeholder="Nome completo"
+                placeholderTextColor="#94a3b8"
+                value={nome}
+                onChangeText={setnome}
+            />
+
+            <TextInput
+                style={styles.input}
+                placeholder="E-mail"
+                placeholderTextColor="#94a3b8"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+            />
+
+            <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                placeholderTextColor="#94a3b8"
+                value={senha}
+                onChangeText={setSenha}
+                secureTextEntry
+            />
+
+            <TextInput
+                style={styles.input}
+                placeholder="Confirmar senha"
+                placeholderTextColor="#94a3b8"
+                value={confirmacao}
+                onChangeText={setConfirmacao}
+                secureTextEntry
+            />
+
+            <TouchableOpacity
+                style={styles.button}
+                onPress={cadastrar}
+            >
+                <Text style={styles.buttonText}>
+                    Cadastrar
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={styles.link}>
+                    Voltar para login
+                </Text>
+            </TouchableOpacity>
+
+        </ScrollView>
+    </KeyboardAvoidingView>
+);
 }
 
 const styles = StyleSheet.create({
@@ -58,6 +121,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 24,
         backgroundColor: '#f8fafc'
+    },
+    keyboardContainer: {
+        flex: 1,
+        backgroundColor: '#f8fafc'
+    },
+
+    container: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+        paddingTop: 40,
+        paddingBottom: 40
     },
     title: {
         fontSize: 28,

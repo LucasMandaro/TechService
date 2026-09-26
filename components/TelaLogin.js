@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../storage';
@@ -73,29 +73,79 @@ export default function TelaLogin({ navigation, onLogin }) {
     }
 
     return (
-        <View style={styles.container}>
+    <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+        <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.logoView}>
-                <Image source={require('../assets/logo.png')} style={styles.imageLogo} resizeMode="contain"/>
+                <Image
+                    source={require('../assets/logo.png')}
+                    style={styles.imageLogo}
+                    resizeMode="contain"
+                />
+
                 <Text style={styles.title}>
                     TechService
                 </Text>
+
                 <Text style={styles.subtitle}>
                     Visita técnica em campo
                 </Text>
             </View>
-            <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#94a3b8" value={usuario} onChangeText={setUsuario} autoCapitalize="none" keyboardType="email-address" />
-            <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#94a3b8" value={senha} onChangeText={setSenha} secureTextEntry />
-            <TouchableOpacity style={styles.button} onPress={() => entrar(false)} disabled={ativo}>
-                <Text style={styles.buttonText}>{ativo ? 'Entrando...' : 'Entrar'}</Text>
+
+            <TextInput
+                style={styles.input}
+                placeholder="E-mail"
+                placeholderTextColor="#94a3b8"
+                value={usuario}
+                onChangeText={setUsuario}
+                autoCapitalize="none"
+                keyboardType="email-address"
+            />
+
+            <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                placeholderTextColor="#94a3b8"
+                value={senha}
+                onChangeText={setSenha}
+                secureTextEntry
+            />
+
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => entrar(false)}
+                disabled={ativo}
+            >
+                <Text style={styles.buttonText}>
+                    {ativo ? 'Entrando...' : 'Entrar'}
+                </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.outline} onPress={entrarComBiometria}>
-                <Text style={styles.outlineText}>Entrar com Biometria</Text>
+
+            <TouchableOpacity
+                style={styles.outline}
+                onPress={entrarComBiometria}
+            >
+                <Text style={styles.outlineText}>
+                    Entrar com Biometria
+                </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
-                <Text style={styles.link}>Criar uma conta</Text>
+
+            <TouchableOpacity
+                onPress={() => navigation.navigate('Cadastro')}
+            >
+                <Text style={styles.link}>
+                    Criar uma conta
+                </Text>
             </TouchableOpacity>
-        </View>
-    );
+        </ScrollView>
+    </KeyboardAvoidingView>
+);
 }
 
 const styles = StyleSheet.create({
@@ -104,6 +154,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8fafc',
         justifyContent: 'center',
         padding: 24
+    },
+    keyboardContainer: {
+        flex: 1,
+        backgroundColor: '#f8fafc'
+    },
+    container: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        padding: 24,
+        paddingTop: 40,
+        paddingBottom: 40
     },
     logoView: {
         alignItems: 'center',
