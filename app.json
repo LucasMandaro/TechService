@@ -10,12 +10,31 @@
       "supportsTablet": true
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDbXpfAA5zNJWLK2VKjsj1OGOovT3VopSo"
+        }
+      },
       "package": "com.techservice.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.techservice.app",
+      "config":{
+        "googleMapsApiKey": "AIzaSyBXzz9L7j1-PEHNpDjCAAEFV29MsD9URAM"
       }
     },
     "web": {
@@ -26,9 +45,9 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#232323",
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/splash-icon.png",
           "dark": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/splash-icon.png",
             "backgroundColor": "#000000"
           },
           "imageWidth": 200
@@ -50,6 +69,11 @@
           ]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9e38361e-d679-4a41-b9a8-2255d8f6c2b1"
+      }
+    }
   }
 }
