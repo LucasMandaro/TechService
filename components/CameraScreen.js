@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { STORAGE_KEYS } from "../storage";
@@ -41,7 +41,9 @@ export default function CameraScreen({ navigation, route }) {
             await AsyncStorage.setItem(STORAGE_KEYS.LAST_PHOTO, JSON.stringify({
                 uri: photo.uri,
                 tipo,
-                owner: route.params?.userId, visitDraft: route.params?.visitDraft || 'new', createdAt: Date.now()
+                owner: route.params?.userId, 
+                solicitacaoId: route.params?.solicitacaoId,
+                createdAt: Date.now()
             }));
             Alert.alert('Foto salva', 'A foto foi slava na galeria. volte para a visita para vê-la anexada.',
                 [{

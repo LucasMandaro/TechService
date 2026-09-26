@@ -21,15 +21,26 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                try{
+
                 const result = await AsyncStorage.getItem(LAST_PHOTO_KEY);
-                if (result) {
-                    const photo = JSON.parse(result);
-                    if (photo.owner === user.id && photo.uri && photo.visitDrat === solicitacaoId) {
-                        await concluir(photo);
-                        await AsyncStorage.removeItem(LAST_PHOTO_KEY);
-                    }
+                if (!result){
+                    return
                 }
-            })();
+                const photo = JSON.parse(result);
+
+                if (
+                    photo.owner === user.id &&
+                    photo.uri &&
+                    photo.solicitacaoId === solicitacaoId
+                ) {
+                    await concluir(photo);
+                    await AsyncStorage.removeItem(LAST_PHOTO_KEY);
+                    }
+                }catch (error){
+                    console.log('erro ao processar foto de conclusão:', error);
+                }
+            })()
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [user.id, solicitacaoId])
     );
@@ -38,7 +49,7 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
         navigation.navigate('Camera', {
             photoType: 'Conclusão',
             userId: user.id,
-            visitDrat: solicitacaoId
+            solicitacaoId: solicitacaoId
         });
     }
 

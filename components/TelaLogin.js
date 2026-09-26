@@ -16,18 +16,43 @@ export default function TelaLogin({ navigation, onLogin }) {
         }
         setAtivo(true)
         try {
-            const users = JSON.parse(await AsyncStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+            const users = JSON.parse(
+                await AsyncStorage.getItem(STORAGE_KEYS.USERS) || '[]'
+            );
             const user = users.find(
-                (item) => (item.email || item.usuario).toLowerCase() === usuario.trim().toLowerCase() && item.senha === senha
+                (item) => 
+                    (item.email || item.usuario) &&
+                    (item.email || item.usuario).toLowerCase() === 
+                        usuario.trim().toLowerCase() && 
+                    item.senha === senha
             )
 
-            if (useBiometrics) {
-                const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Confirme sua identidade' });
-                if (!result.success)
-                    return;
+            if (!user) {
+                Alert.alert(
+                    'Login inválido',
+                    'E-mail/usuário ou senha incorretos.'
+                );
+                return;
             }
 
-            await onLogin({ id: user.id, nome: user.nome, email: user.email });
+            if (useBiometrics) {
+                const result =
+                    await LocalAuthentication.authenticateAsync({ 
+                        promptMessage: 'Confirme sua identidade' 
+                    });
+                if (!result.success){
+                    return;
+                }
+            }
+
+            await onLogin(user);
+        }catch(error){
+            console.log('Erro ao fazer login:', error);
+
+            Alert.alert(
+                'Erro',
+                'Não foi possivel realizar o login.'
+            );
         } finally {
             setAtivo(false);
         }

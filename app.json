@@ -60,11 +60,10 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Permita que o aplicativo acesse suas fotos.",
-          "savePhotosPermission": "Permita que o aplicativo salve fotos na galeria.",
-          "granularPermissions": [
-            "photo"
-          ]
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": ["audio", "photo"]
         }
       ]
     ],

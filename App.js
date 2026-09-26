@@ -68,18 +68,42 @@ export default function App() {
   }
 
   async function onUpdateUser(userAtualizado) {
-    const sessionUser = {
-      ...session, ...userAtualizado
-    };
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.SESSION,
-      JSON.stringify(sessionUser)
-    );
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.LAST_ACCOUNT,
-      JSON.stringify(sessionUser)
-    );
-    setSession(sessionUser);
+    try{
+      const usuariosSalvos = await  AsyncStorage.getItem(STORAGE_KEYS.USERS);
+      const usuarios = JSON.parse(usuariosSalvos || '[]');
+
+      const usuariosAtualizados = usuarios.map((usuario) =>
+        usuario.id === userAtualizado.id? userAtualizado :usuario
+      );
+
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.USERS,
+        JSON.stringify(usuariosAtualizados)
+      );
+
+      const sessionUser = {
+        ...session,
+        ...userAtualizado
+      };
+
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.SESSION,
+        JSON.stringify(sessionUser)
+      );
+
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_ACCOUNT,
+        JSON.stringify(sessionUser)
+      );
+
+      setSession(sessionUser);
+    } catch (error){
+      console.log('Erro ao atualizar usuário:', error);
+      Alert.alert(
+        'Erro',
+        'Não foi possivel salvar as alterações do perfil.'
+      );
+    }
   }
 
   async function logout() {

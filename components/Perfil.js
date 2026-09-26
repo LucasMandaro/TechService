@@ -15,13 +15,29 @@ export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const result = await AsyncStorage.getItem(LAST_PHOTO_KEY);
-                if (result) {
+                try{
+                    const result = await AsyncStorage.getItem(LAST_PHOTO_KEY);
+                    if (!result){
+                        return;
+                    }
+
                     const photo = JSON.parse(result);
-                    if (photo.owner === user.id && photo.uri && photo.visitDrat === 'perfil') {
-                        setFoto(photo);
+
+                    console.log('Foto recebida no perfil:', photo)
+                
+                    if (
+                        photo.owner === user.id &&
+                        photo.uri &&
+                        photo.solicitacaoId === 'perfil'
+                    ){
+                        setFoto({
+                            uri: photo.uri
+                        });
+
                         await AsyncStorage.removeItem(LAST_PHOTO_KEY);
                     }
+                }catch (error) {
+                    console.log('Erro ao carregar foto do perfil:', error);
                 }
             })();
         }, [user.id])
@@ -31,7 +47,7 @@ export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
         navigation.navigate('Camera', {
             photoType: 'Perfil',
             userId: user.id,
-            visitDrat: 'perfil'
+            solicitacaoId: 'perfil'
         });
     }
 
@@ -50,7 +66,12 @@ export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
 
         setSalvando(true);
         try {
-            await onUpdateUser({ ...user, nome: nome.trim(), email: email.trim(), foto });
+            await onUpdateUser({ 
+                ...user,
+                nome: nome.trim(), 
+                email: email.trim(), 
+                foto 
+            });
             setEditando(false);
         } finally {
             setSalvando(false);

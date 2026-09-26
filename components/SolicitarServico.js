@@ -48,7 +48,7 @@ export default function SolicitarServico({ navigation, user }) {
             const result = await AsyncStorage.getItem(LAST_PHOTO_KEY);
             if (result) {
                 const photo = JSON.parse(result);
-                if (photo.owner === user.id && photo.uri && photo.visitDrat === 'solicitacao') {
+                if (photo.owner === user.id && photo.uri && photo.solicitacaoId === 'solicitacao') {
                     setFoto(photo);
                     await AsyncStorage.removeItem(LAST_PHOTO_KEY);
                 }
@@ -78,7 +78,7 @@ export default function SolicitarServico({ navigation, user }) {
         navigation.navigate('Camera', {
             photoType: 'Aparelho',
             userId: user.id,
-            visitDrat: 'solicitacao'
+            solicitacaoId: 'solicitacao'
         });
     }
 
