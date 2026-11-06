@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from '../storage';
 
@@ -9,6 +10,7 @@ export default function TelaCadastro({ navigation }) {
     const [senha, setSenha] = useState('');
     const [confirmacao, setConfirmacao] = useState('');
     const [mostrarSenha, setMostrarSenha] = useState(false)
+    const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false)
 
     async function cadastrar() {
         if (!nome.trim() || !email.trim() || !senha)
@@ -36,100 +38,142 @@ export default function TelaCadastro({ navigation }) {
     }
 
     return (
-    <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-        <ScrollView
-            contentContainerStyle={styles.container}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+            style={styles.keyboardContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <Image
-                source={require('../assets/logo.png')}
-                style={styles.imageLogo}
-                resizeMode="contain"
-            />
-
-            <Text style={styles.title}>
-                Criar conta
-            </Text>
-
-            <Text style={styles.subtitle}>
-                Cadastre-se no TechService.
-            </Text>
-
-            <TextInput
-                style={styles.input}
-                placeholder="Nome completo"
-                placeholderTextColor="#94a3b8"
-                value={nome}
-                onChangeText={setnome}
-            />
-
-            <TextInput
-                style={styles.input}
-                placeholder="E-mail"
-                placeholderTextColor="#94a3b8"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-            />
-
-            <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor="#94a3b8"
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry={mostrarSenha}
-            />
-
-            <TextInput
-                style={styles.input}
-                placeholder="Confirmar senha"
-                placeholderTextColor="#94a3b8"
-                value={confirmacao}
-                onChangeText={setConfirmacao}
-                secureTextEntry={mostrarSenha}
-            />
-
-            <TouchableOpacity onPress={() => setMostrarSenha (!mostrarSenha)}>
-                <Text>{mostrarSenha ? "mostrar" : "mostrar"}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.button}
-                onPress={cadastrar}
+            <ScrollView
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.buttonText}>
-                    Cadastrar
-                </Text>
-            </TouchableOpacity>
+                <Image
+                    source={require('../assets/logo.png')}
+                    style={styles.imageLogo}
+                    resizeMode="contain"
+                />
 
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.link}>
-                    Voltar para login
+                <Text style={styles.title}>
+                    Criar conta
                 </Text>
-            </TouchableOpacity>
 
-        </ScrollView>
-    </KeyboardAvoidingView>
-);
+                <Text style={styles.subtitle}>
+                    Cadastre-se no TechService.
+                </Text>
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="Nome completo"
+                    placeholderTextColor="#94a3b8"
+                    value={nome}
+                    onChangeText={setnome}
+                />
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="E-mail"
+                    placeholderTextColor="#94a3b8"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                />
+
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Senha"
+                        placeholderTextColor="#94a3b8"
+                        value={senha}
+                        onChangeText={setSenha}
+                        secureTextEntry={!mostrarSenha}
+                    />
+
+                    <TouchableOpacity 
+                        onPress={() => setMostrarSenha(!mostrarSenha)}
+                        style={styles.eyeButton}
+                    >
+                        <Ionicons
+                            name={mostrarSenha ? "eye-off" : "eye"}
+                            size={24}
+                            color="#2563eb"
+                        />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Confirmar senha"
+                        placeholderTextColor="#94a3b8"
+                        value={confirmacao}
+                        onChangeText={setConfirmacao}
+                        secureTextEntry={!mostrarConfirmacao}
+                    />
+
+                    <TouchableOpacity 
+                        onPress={() => setMostrarConfirmacao(!mostrarConfirmacao)}
+                        style={styles.eyeButton}
+                    >
+                        <Ionicons
+                            name={mostrarConfirmacao ? "eye-off" : "eye"}
+                            size={24}
+                            color="#2563eb"
+                        />
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={cadastrar}
+                >
+                    <Text style={styles.buttonText}>
+                        Cadastrar
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Text style={styles.link}>
+                        Voltar para login
+                    </Text>
+                </TouchableOpacity>
+
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-        backgroundColor: '#f8fafc'
-    },
+    
     keyboardContainer: {
         flex: 1,
         backgroundColor: '#f8fafc'
+    },
+
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: 300,
+        height: 52,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 12,
+        marginBottom: 12,
+        paddingHorizontal: 16,
+    },
+
+    passwordInput: {
+        flex: 1,
+        height: '100%',
+        color: '#000',
+        paddingHorizontal: 0,
+    },
+
+    eyeButton: {
+        padding: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 
     container: {
@@ -148,7 +192,7 @@ const styles = StyleSheet.create({
     imageLogo: {
         width: 64,
         height: 64,
-        
+
     },
     subtitle: {
         color: '#64748b',
@@ -168,7 +212,7 @@ const styles = StyleSheet.create({
     },
     button: {
         height: 52,
-        width:100,
+        width: 100,
         backgroundColor: '#2563eb',
         borderRadius: 12,
         alignItems: 'center',

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Scro
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../storage';
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TelaLogin({ navigation, onLogin }) {
     const [usuario, setUsuario] = useState('');
@@ -21,10 +22,10 @@ export default function TelaLogin({ navigation, onLogin }) {
                 await AsyncStorage.getItem(STORAGE_KEYS.USERS) || '[]'
             );
             const user = users.find(
-                (item) => 
+                (item) =>
                     (item.email || item.usuario) &&
-                    (item.email || item.usuario).toLowerCase() === 
-                        usuario.trim().toLowerCase() && 
+                    (item.email || item.usuario).toLowerCase() ===
+                    usuario.trim().toLowerCase() &&
                     item.senha === senha
             )
 
@@ -38,16 +39,16 @@ export default function TelaLogin({ navigation, onLogin }) {
 
             if (useBiometrics) {
                 const result =
-                    await LocalAuthentication.authenticateAsync({ 
-                        promptMessage: 'Confirme sua identidade' 
+                    await LocalAuthentication.authenticateAsync({
+                        promptMessage: 'Confirme sua identidade'
                     });
-                if (!result.success){
+                if (!result.success) {
                     return;
                 }
             }
 
             await onLogin(user);
-        }catch(error){
+        } catch (error) {
             console.log('Erro ao fazer login:', error);
 
             Alert.alert(
@@ -74,95 +75,125 @@ export default function TelaLogin({ navigation, onLogin }) {
     }
 
     return (
-    <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-        <ScrollView
-            contentContainerStyle={styles.container}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+            style={styles.keyboardContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.logoView}>
-                <Image
-                    source={require('../assets/logo.png')}
-                    style={styles.imageLogo}
-                    resizeMode="contain"
+            <ScrollView
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.logoView}>
+                    <Image
+                        source={require('../assets/logo.png')}
+                        style={styles.imageLogo}
+                        resizeMode="contain"
+                    />
+
+                    <Text style={styles.title}>
+                        TechService
+                    </Text>
+
+                    <Text style={styles.subtitle}>
+                        Visita técnica em campo
+                    </Text>
+                </View>
+
+                <TextInput
+                    style={styles.input}
+                    placeholder="E-mail"
+                    placeholderTextColor="#94a3b8"
+                    value={usuario}
+                    onChangeText={setUsuario}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
                 />
 
-                <Text style={styles.title}>
-                    TechService
-                </Text>
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Senha"
+                        placeholderTextColor="#94a3b8"
+                        value={senha}
+                        onChangeText={setSenha}
+                        secureTextEntry={!mostrarSenha}
+                    />
+                    <TouchableOpacity 
+                        onPress={() => setMostrarSenha(!mostrarSenha)}
+                        style={styles.eyeButton}
+                    >
+                        <Ionicons
+                            name={mostrarSenha ? "eye-off" : "eye"}
+                            size={24}
+                            color="#2563eb"
+                        />
+                    </TouchableOpacity>
+                </View>
 
-                <Text style={styles.subtitle}>
-                    Visita técnica em campo
-                </Text>
-            </View>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => entrar(false)}
+                    disabled={ativo}
+                >
+                    <Text style={styles.buttonText}>
+                        {ativo ? 'Entrando...' : 'Entrar'}
+                    </Text>
+                </TouchableOpacity>
 
-            <TextInput
-                style={styles.input}
-                placeholder="E-mail"
-                placeholderTextColor="#94a3b8"
-                value={usuario}
-                onChangeText={setUsuario}
-                autoCapitalize="none"
-                keyboardType="email-address"
-            />
+                <TouchableOpacity
+                    style={styles.outline}
+                    onPress={entrarComBiometria}
+                >
+                    <Text style={styles.outlineText}>
+                        Entrar com Biometria
+                    </Text>
+                </TouchableOpacity>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor="#94a3b8"
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry={mostrarSenha}
-            />
-            <TouchableOpacity onPress={() => setMostrarSenha (!mostrarSenha)}>
-                <Text>{mostrarSenha ? "mostrar" : "mostrar"}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => entrar(false)}
-                disabled={ativo}
-            >
-                <Text style={styles.buttonText}>
-                    {ativo ? 'Entrando...' : 'Entrar'}
-                </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.outline}
-                onPress={entrarComBiometria}
-            >
-                <Text style={styles.outlineText}>
-                    Entrar com Biometria
-                </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                onPress={() => navigation.navigate('Cadastro')}
-            >
-                <Text style={styles.link}>
-                    Criar uma conta
-                </Text>
-            </TouchableOpacity>
-        </ScrollView>
-    </KeyboardAvoidingView>
-);
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Cadastro')}
+                >
+                    <Text style={styles.link}>
+                        Criar uma conta
+                    </Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f8fafc',
-        justifyContent: 'center',
-        padding: 24
-    },
+
     keyboardContainer: {
         flex: 1,
         backgroundColor: '#f8fafc'
     },
+
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 52,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 12,
+        marginBottom: 12,
+        paddingHorizontal: 16,
+    },
+
+    passwordInput: {
+        flex: 1,
+        height: '100%',
+        color: '#000',
+        paddingHorizontal: 0,
+    },
+
+    eyeButton: {
+        padding: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
     container: {
         flexGrow: 1,
         justifyContent: 'center',
@@ -223,23 +254,23 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 16
     },
-    outline: { 
-        height: 52, 
-        borderRadius: 12, 
-        borderWidth: 1, 
-        borderColor: '#2563eb', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: 12 
-    }, 
-    outlineText: { 
-        color: '#2563eb', 
-        fontWeight: '700' 
+    outline: {
+        height: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#2563eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 12
     },
-    link: { 
-        textAlign: 'center', 
-        color: '#2563eb', 
-        fontWeight: '700', 
-        marginTop: 24 
+    outlineText: {
+        color: '#2563eb',
+        fontWeight: '700'
+    },
+    link: {
+        textAlign: 'center',
+        color: '#2563eb',
+        fontWeight: '700',
+        marginTop: 24
     },
 });

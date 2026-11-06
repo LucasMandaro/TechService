@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as MediaLibrary from 'expo-media-library/legacy';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -78,23 +79,25 @@ export default function CameraScreen({ navigation, route }) {
     return <SafeAreaView style={styles.container}>
         <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} mode="picture" />
         <View style={styles.top}>
-            <Text style={styles.type}>
-                {tipo}
-            </Text>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.close}>
-                    Fechar
-                </Text>
+            <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={styles.close}
+            >
+                <Ionicons name="close" size={28} color="#fff" />
             </TouchableOpacity>
         </View>
         <View style={styles.controls}>
-            <TouchableOpacity style={styles.flip} onPress={() => setFacing((v) => v === 'back' ? 'front' : 'back')}>
-                <Text style={styles.flipText}>
-                    ↻
-                </Text>
+            <TouchableOpacity 
+                style={styles.flip} 
+                onPress={() => setFacing((v) => v === 'back' ? 'front' : 'back')}
+            >
+                <Ionicons name="camera-reverse" size={28} color="#000" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.capture} onPress={takePicture} disabled={saving}>
-                <View style={styles.captureInner} />
+            <TouchableOpacity 
+                style={styles.capture} 
+                onPress={takePicture} disabled={saving}
+            >
+                <Ionicons name="camera" size={60} color="#000000" />
             </TouchableOpacity>
             <View style={styles.spacer} />
         </View>
@@ -147,7 +150,8 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         backgroundColor: 'rgba(0,0,0,.55)',
         padding: 9,
-        borderRadius: 10
+        borderRadius: 10,
+        marginTop: 20
     },
     controls: {
         position: 'absolute',
@@ -163,7 +167,7 @@ const styles = StyleSheet.create({
         width: 55,
         height: 55,
         borderRadius: 28,
-        backgroundColor: 'rgba(255,255,255,.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         alignItems: 'center',
         justifyContent: 'center'
     },
@@ -176,15 +180,9 @@ const styles = StyleSheet.create({
         borderRadius: 41,
         borderWidth: 5,
         borderColor: '#fff',
+        backgroundColor: '#ffffff',
         alignItems: 'center',
         justifyContent: 'center'
-    },
-    captureInner: {
-        width: 66,
-        height: 66,
-        borderRadius: 33,
-        backgroundColor: '#fff'
-
     },
     spacer: {
         width: 55
