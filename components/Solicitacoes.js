@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const SOLICITACOES_KEY = '@techservice:solicitacoes';
+import { listarTodas } from '../database';
+import { sincronizar } from '../sync';
 
 const STATUS_COLORS = {
     Pendente: { bg: '#fef3c7', text: '#92400e' },
@@ -15,11 +14,12 @@ export default function Solicitacoes({ navigation }) {
     const [refreshing, setRefreshing] = useState(false);
 
     const load = useCallback(async () => {
-        const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
-        setSolicitacoes(all.sort((a, b) => b.createdAt - a.createdAt));
+        setSolicitacoes(await listarTodas());
     }, []);
-
-    useFocusEffect(useCallback(() => { load(); }, [load]));
+    useFocusEffect(useCallback(() => {
+        load();
+        sincronizar().then((ok) => ok && load());
+    }, [load]));
 
     return (
         <View style={styles.container}>
@@ -36,6 +36,7 @@ export default function Solicitacoes({ navigation }) {
                         refreshing={refreshing}
                         onRefresh={async () => {
                             setRefreshing(true);
+                            await sincronizar();
                             await load();
                             setRefreshing(false);
                         }}

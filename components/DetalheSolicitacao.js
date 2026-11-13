@@ -3,8 +3,9 @@ import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { buscarPorId, concluirSolicitacao } from '../database';
+import { sincronizar } from '../sync';
 
-const SOLICITACOES_KEY = '@techservice:solicitacoes';
 const LAST_PHOTO_KEY = '@techservice:last_photo';
 
 export default function DetalheSolicitacao({ navigation, route, user }) {
@@ -12,8 +13,7 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
     const [solicitacao, setSolicitacao] = useState(null);
 
     const load = useCallback(async () => {
-        const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
-        setSolicitacao(all.find((s) => s.id === solicitacaoId) || null);
+        setSolicitacao(await buscarPorId(solicitacaoId));
     }, [solicitacaoId]);
 
     useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -54,15 +54,10 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
     }
 
     async function concluir(fotoConclusao) {
-        const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
-        const next = all.map((s) =>
-            s.id === solicitacaoId
-                ? { ...s, status: 'Concluída', fotoConclusao, concludedAt: Date.now() }
-                : s
-        );
-        await AsyncStorage.setItem(SOLICITACOES_KEY, JSON.stringify(next));
+        await concluirSolicitacao(solicitacaoId, fotoConclusao);
+        sincronizar();
         await load();
-        Alert.alert('Atendimento concluído', 'A solicitação foi marcada como concluída.');
+        Alert.alert('Atendimento Concluido', 'A solicitação foi marcada como concluida.');
     }
 
     function marcarConcluida() {

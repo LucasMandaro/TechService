@@ -4,4 +4,5 @@ export const STORAGE_KEYS = {
     LAST_ACCOUNT: '@techservice:last_account',
     VISITS: '@techservice:visits',
     LAST_PHOTO: '@techservice:last_photo',
+    LAST_SYNC: '@techservice:last_sync',
 };

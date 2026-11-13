@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import * as LocalAuthentication from 'expo-local-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../storage';
 import { Ionicons } from "@expo/vector-icons";
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 export default function TelaLogin({ navigation, onLogin }) {
     const [usuario, setUsuario] = useState('');
@@ -16,24 +17,30 @@ export default function TelaLogin({ navigation, onLogin }) {
             Alert.alert('Atenção', 'Preencha usuário/e-mail e senha.');
             return;
         }
-        setAtivo(true)
-        try {
-            const users = JSON.parse(
-                await AsyncStorage.getItem(STORAGE_KEYS.USERS) || '[]'
-            );
-            const user = users.find(
-                (item) =>
-                    (item.email || item.usuario) &&
-                    (item.email || item.usuario).toLowerCase() ===
-                    usuario.trim().toLowerCase() &&
-                    item.senha === senha
-            )
 
-            if (!user) {
-                Alert.alert(
-                    'Login inválido',
-                    'E-mail/usuário ou senha incorretos.'
-                );
+        setAtivo(true)
+
+        try {
+            const email = usuario.trim().toLowerCase();
+            let cred;
+            try {
+                cred = await signInWithEmailAndPassword(auth, email, senha);
+            } catch (e) {
+                const invalido = [
+                    'auth/invalid-credential', 'auth/wrong-password',
+                    'auth/user-not-found', 'auth/invalid-email'
+                ].includes(e.code);
+
+                if (invalido) {
+                    Alert.alert('Login inválido', 'E-mail ou senha incorretos.');
+                } else if (e.code === 'auth/network-request-failed') {
+                    Alert.alert('Sen conexão', 'Conecte-se à internet para entrar.');
+                } else if (e.code === 'auth/too-many-requests') {
+                    Alert.alert('Muitas tentativas', 'Aguarde um pouco e tente de novo.');
+                } else {
+                    console.log('Erro ao fazer login:', e);
+                    Alert.alert('Erro', 'Não foi possivel realizar o login.');
+                }
                 return;
             }
 
@@ -42,19 +49,30 @@ export default function TelaLogin({ navigation, onLogin }) {
                     await LocalAuthentication.authenticateAsync({
                         promptMessage: 'Confirme sua identidade'
                     });
+
                 if (!result.success) {
+                    await signOut(auth);
                     return;
                 }
             }
 
-            await onLogin(user);
+            let perfil = {};
+            try {
+                const snap = await getDoc(doc(db, 'users', cred.user.uid));
+                if (snap.exists()) perfil = snap.data();
+            } catch (e) {
+                console.log('Perfil indisponível:', e?.code || e?.message);
+            }
+
+            await onLogin({
+                nome: email.split('@')[0],
+                ...perfil,
+                id: cred.user.uid,
+                email
+            });
         } catch (error) {
             console.log('Erro ao fazer login:', error);
-
-            Alert.alert(
-                'Erro',
-                'Não foi possivel realizar o login.'
-            );
+            Alert.alert('Erro', 'Não foi possivel realizar o login.');
         } finally {
             setAtivo(false);
         }
@@ -119,7 +137,7 @@ export default function TelaLogin({ navigation, onLogin }) {
                         onChangeText={setSenha}
                         secureTextEntry={!mostrarSenha}
                     />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setMostrarSenha(!mostrarSenha)}
                         style={styles.eyeButton}
                     >

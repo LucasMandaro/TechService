@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image,RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { criarSolicitacao, listarPorCliente, novoId } from '..database';
+import { sincronizar } from '..sync';
 
 
-const SOLICITACOES_KEY = '@techservice:solicitacoes';
 const LAST_PHOTO_KEY = '@techservice:last_photo';
 
 const STATUS_COLORS = {
@@ -35,13 +36,13 @@ export default function SolicitarServico({ navigation, user }) {
     }, []);
 
     const carregarHistorico = useCallback(async () => {
-        const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
-        setHistorico(
-            all.filter((s) => s.clienteId === user.id).sort((a, b) => b.createdAt - a.createdAt)
-        );
+        setHistorico(await listarPorCliente(user.id));
     }, [user.id]);
 
-    useFocusEffect(useCallback(() => { carregarHistorico(); }, [carregarHistorico]));
+    useFocusEffect(useCallback(() => {
+        carregarHistorico();
+        sincronizar().then((ok) => ok && carregarHistorico());
+    }, [carregarHistorico]));
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', async () => {
@@ -96,22 +97,21 @@ export default function SolicitarServico({ navigation, user }) {
         try {
             const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
             const nova = {
-                id: `${Date.now()}`,
+                id: novoId(),
                 clienteId: user.id,
                 clienteNome: user.nome,
                 descricao: descricao.trim(),
                 location,
                 foto,
                 status: 'Pendente',
-                fotoConclusao: null,
                 createdAt: Date.now(),
-                concludedAt: null
             };
-            await AsyncStorage.setItem(SOLICITACOES_KEY, JSON.stringify([...all, nova]));
+            await criarSolicitacao(nova);
             setDescricao('');
             setFoto(null);
             setExpandido(false);
             await carregarHistorico();
+            sincronizar().then((ok) => ok && carregarHistorico());
             Alert.alert('Solicitação enviada', 'Um técnico vai atender seu chamado em breve.');
         } finally {
             setLoading(false);
@@ -210,6 +210,7 @@ export default function SolicitarServico({ navigation, user }) {
                     refreshing={refreshing}
                     onRefresh={async () => {
                         setRefreshing(true);
+                        await sincronizar();
                         await carregarHistorico();
                         setRefreshing(false);
                     }}
@@ -240,24 +241,24 @@ export default function SolicitarServico({ navigation, user }) {
 }
 
 const styles = StyleSheet.create({
-    container: { 
+    container: {
         flex: 1,
-        backgroundColor: '#f8fafc' 
+        backgroundColor: '#f8fafc'
     },
-    content: { 
-        padding: 20, 
-        paddingTop: 45, 
-        paddingBottom: 45 
+    content: {
+        padding: 20,
+        paddingTop: 45,
+        paddingBottom: 45
     },
-    title: { 
-        fontSize: 25, 
-        fontWeight: '800', 
-        color: '#0f172a' 
+    title: {
+        fontSize: 25,
+        fontWeight: '800',
+        color: '#0f172a'
     },
-    sub: { 
-        color: '#64748b', 
-        marginTop: 3, 
-        marginBottom: 15 
+    sub: {
+        color: '#64748b',
+        marginTop: 3,
+        marginBottom: 15
     },
     toggle: {
         backgroundColor: '#eef2ff',
@@ -266,17 +267,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8
     },
-    toggleText: { 
-        color: '#3730a3', 
-        fontWeight: '700' },
-    form: { 
-        marginTop: 4 
+    toggleText: {
+        color: '#3730a3',
+        fontWeight: '700'
     },
-    label: { 
-        color: '#334155', 
-        fontWeight: '700', 
-        marginBottom: 7, 
-        marginTop: 12 
+    form: {
+        marginTop: 4
+    },
+    label: {
+        color: '#334155',
+        fontWeight: '700',
+        marginBottom: 7,
+        marginTop: 12
     },
     input: {
         backgroundColor: '#fff',
@@ -286,40 +288,40 @@ const styles = StyleSheet.create({
         minHeight: 50,
         paddingHorizontal: 14
     },
-    textarea: { 
-        minHeight: 110, 
-        paddingTop: 14, 
-        textAlignVertical: 'top' 
+    textarea: {
+        minHeight: 110,
+        paddingTop: 14,
+        textAlignVertical: 'top'
     },
-    locationCard: { 
-        backgroundColor: '#eff6ff', 
-        borderRadius: 14, 
-        padding: 15, 
-        marginTop: 16 
+    locationCard: {
+        backgroundColor: '#eff6ff',
+        borderRadius: 14,
+        padding: 15,
+        marginTop: 16
     },
-    locationTitle: { 
-        fontWeight: '800', 
-        color: '#1e3a8a' 
+    locationTitle: {
+        fontWeight: '800',
+        color: '#1e3a8a'
     },
-    locationText: { 
-        color: '#475569', 
-        marginTop: 6 
+    locationText: {
+        color: '#475569',
+        marginTop: 6
     },
-    map: { 
-        width: '100%', 
-        height: 180, 
-        borderRadius: 12, 
-        marginTop: 10 
+    map: {
+        width: '100%',
+        height: 180,
+        borderRadius: 12,
+        marginTop: 10
     },
-    hint: { 
-        color: '#94a3b8', 
-        fontSize: 12, 
-        marginTop: 6 
+    hint: {
+        color: '#94a3b8',
+        fontSize: 12,
+        marginTop: 6
     },
-    action: { 
-        color: '#2563eb', 
-        fontWeight: '700', 
-        marginTop: 8 
+    action: {
+        color: '#2563eb',
+        fontWeight: '700',
+        marginTop: 8
     },
     cameraButton: {
         height: 52,
@@ -329,9 +331,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 20
     },
-    cameraButtonText: { 
-        color: '#fff', 
-        fontWeight: '800' 
+    cameraButtonText: {
+        color: '#fff',
+        fontWeight: '800'
     },
     photoCard: {
         marginTop: 12,
@@ -340,9 +342,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e2e8f0'
     },
-    photo: { 
-        width: '100%', 
-        height: 200 
+    photo: {
+        width: '100%',
+        height: 200
     },
     saveButton: {
         height: 54,
@@ -352,17 +354,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 25
     },
-    saveText: { 
-        color: '#fff', 
-        fontWeight: '800', 
-        fontSize: 16 
+    saveText: {
+        color: '#fff',
+        fontWeight: '800',
+        fontSize: 16
     },
-    section: { 
-        fontSize: 18, 
-        fontWeight: '800', 
-        color: '#0f172a', 
-        marginTop: 28, 
-        marginBottom: 10 
+    section: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0f172a',
+        marginTop: 28,
+        marginBottom: 10
     },
     historicoCard: {
         backgroundColor: '#fff',
@@ -372,40 +374,40 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e2e8f0'
     },
-    cardTop: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+    cardTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
-    cardTitle: { 
-        fontSize: 15, 
-        fontWeight: '700', 
-        color: '#0f172a', 
-        flex: 1, 
-        marginRight: 8 
+    cardTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#0f172a',
+        flex: 1,
+        marginRight: 8
     },
-    badge: { 
-        paddingHorizontal: 9, 
-        paddingVertical: 4, 
-        borderRadius: 99, 
-        fontSize: 12, 
-        fontWeight: '700' 
+    badge: {
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+        borderRadius: 99,
+        fontSize: 12,
+        fontWeight: '700'
     },
-    cardMeta: { 
-        color: '#94a3b8', 
-        marginTop: 6, 
-        fontSize: 12 
+    cardMeta: {
+        color: '#94a3b8',
+        marginTop: 6,
+        fontSize: 12
     },
-    cardPhoto: { 
-        width: '100%', 
-        height: 140, 
-        borderRadius: 10, 
-        marginTop: 10 
+    cardPhoto: {
+        width: '100%',
+        height: 140,
+        borderRadius: 10,
+        marginTop: 10
     },
-    empty: { 
-        color: '#64748b', 
-        textAlign: 'center', 
-        marginTop: 10, 
-        marginBottom: 20 
+    empty: {
+        color: '#64748b',
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 20
     }
 });

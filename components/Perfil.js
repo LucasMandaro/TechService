@@ -131,6 +131,7 @@ export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
                             style={styles.input}
                             value={email}
                             onChangeText={setEmail}
+                            editable={false}
                             autoCapitalize="none"
                             keyboardType="email-address"
                         />

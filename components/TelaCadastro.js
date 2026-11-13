@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { STORAGE_KEYS } from '../storage';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase'
 
 export default function TelaCadastro({ navigation }) {
     const [nome, setnome] = useState('');
@@ -22,15 +23,27 @@ export default function TelaCadastro({ navigation }) {
         if (senha !== confirmacao)
             return Alert.alert('Senha', 'As senhas não conferem.');
 
-        const users = JSON.parse(await AsyncStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-
-        if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase()))
-            return Alert.alert('Cadastro', 'Este e-mail já está cadastrado.');
-        users.push({
-            id: `${Date.now()}`, nome: nome.trim(), email: email.trim().toLowerCase(), senha
-        });
-
-        await AsyncStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        try {
+            const emailLimpo = email.trim().toLowerCase();
+            const cred = await createUserWithEmailAndPassword(auth, emailLimpo, senha);
+            await setDoc(doc(db, 'users', cred.user.uid), {
+                nome: nome.trim(),
+                email: emailLimpo,
+                createdAt: Date.now()
+            });
+            await signOut(auth);
+        } catch (e) {
+            if (e.code === 'auth/email-already-in-use')
+                return Alert.alert('Cadastro', 'Este e-mail já está cadastrado.');
+            if (e.code === 'auth/invalid-email')
+                return Alert.alert('Cadastro', 'E-mail inválido.');
+            if (e.code === 'auth/weak-password')
+                return Alert.alert('Senha', 'Use pelo menos 6 caracteres.');
+            if (e.code === 'auth/network-request-failed')
+                return Alert.alert('Sem conexão', 'Conecte-se à internet para criar a conta.');
+            console.log('Erro no cadastro:', e);
+            return Alert.alert('Erro', 'Não foi possível criar a conta.');
+        }
 
         Alert.alert('Cadastro realizado', 'Agora você pode entrar no TechService.',
             [{ text: 'Entrar', onPress: () => navigation.goBack() }]
@@ -89,7 +102,7 @@ export default function TelaCadastro({ navigation }) {
                         secureTextEntry={!mostrarSenha}
                     />
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setMostrarSenha(!mostrarSenha)}
                         style={styles.eyeButton}
                     >
@@ -111,7 +124,7 @@ export default function TelaCadastro({ navigation }) {
                         secureTextEntry={!mostrarConfirmacao}
                     />
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setMostrarConfirmacao(!mostrarConfirmacao)}
                         style={styles.eyeButton}
                     >
@@ -144,7 +157,7 @@ export default function TelaCadastro({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    
+
     keyboardContainer: {
         flex: 1,
         backgroundColor: '#f8fafc'
