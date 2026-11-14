@@ -64,7 +64,9 @@ export default function App() {
             await AsyncStorage.removeItem(STORAGE_KEYS.LAST_ACCOUNT);
           }
         }
-      } finally {
+      } catch(e){
+        console.log('[init] ERRO:', e?.stack || e);
+      }finally {
         setCarregando(false);
       }
     })();
@@ -115,7 +117,7 @@ export default function App() {
       }
 
       const dadosRemotos = { nome: perfil.nome, email: perfil.email };
-      if (perfil.foto?.uri.startsWith('http'))
+      if (perfil.foto?.uri?.startsWith('http'))
         dadosRemotos.foto = perfil.foto;
       await setDoc(doc(db, 'users', usuarioAuth.uid), dadosRemotos, { merge: true });
 

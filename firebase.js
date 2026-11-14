@@ -13,7 +13,7 @@ const firebaseConfig = {
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const jaInicalizado = getApps().length > 0;
+const jaInicializado = getApps().length > 0;
 const app = jaInicializado ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = jaInicializado

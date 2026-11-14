@@ -34,7 +34,7 @@ export default function TelaLogin({ navigation, onLogin }) {
                 if (invalido) {
                     Alert.alert('Login inválido', 'E-mail ou senha incorretos.');
                 } else if (e.code === 'auth/network-request-failed') {
-                    Alert.alert('Sen conexão', 'Conecte-se à internet para entrar.');
+                    Alert.alert('Sem conexão', 'Conecte-se à internet para entrar.');
                 } else if (e.code === 'auth/too-many-requests') {
                     Alert.alert('Muitas tentativas', 'Aguarde um pouco e tente de novo.');
                 } else {

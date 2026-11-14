@@ -12,7 +12,7 @@ const TIMEOUT_MS = 10000;
 function comTimeout(promise, ms = TIMEOUT_MS) {
     return Promise.race([
         promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
     ]);
 }
 
@@ -57,7 +57,12 @@ async function enviarPendentes() {
             await marcarSincronizada(s.id, s.updated_at, fotoUrl, conclusaoUrl);
         } catch (e) {
             if (e?.message === 'timeout') throw e;
-            console.log(`Falha ao enviar solicitação ${s.id}:`, e?.message);
+            console.log(
+                `Falha ao enviar solicitação ${s.id}:`, 
+                e?.code,
+                e?.message,
+                e?.serverResponse || e?.customData?.serverResponse
+            );
         }
     }
 }

@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise = null;
 function getDb(){
-    if(!dbPromise) dbPromise = SQLite.openDatabase('techservice.db');
+    if(!dbPromise) dbPromise = SQLite.openDatabaseAsync('techservice.db');
     return dbPromise;
 }
 
@@ -56,7 +56,7 @@ function paraObjeto(r){
 export async function criarSolicitacao(s){
     const db = await getDb();
     const agora = Date.now();
-    await db.execAsync(
+    await db.runAsync(
         `INSERT INTO solicitacoes
             (id, cliente_id, cliente_nome, descricao, latitude, longitude, foto_uri, 
             status, created_at, updated_at, synced)
@@ -120,7 +120,7 @@ export async function marcarSincronizada(id, updatedAtEnviado, fotoUrl, fotoConc
     await db.runAsync(
         `UPDATE solicitacoes
             SET foto_url = COALESCE(?, foto_url),
-                foto_conclusao_url = COALESCE(?, foto_conclusao_url),
+                foto_conclusao_url = COALESCE(?, foto_conclusao_url)
             WHERE id = ?`,
         [fotoUrl ?? null, fotoConclusaoUrl ?? null, id]
     );

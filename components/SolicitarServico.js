@@ -4,8 +4,8 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { criarSolicitacao, listarPorCliente, novoId } from '..database';
-import { sincronizar } from '..sync';
+import { criarSolicitacao, listarPorCliente, novoId } from '../database';
+import { sincronizar } from '../sync';
 
 
 const LAST_PHOTO_KEY = '@techservice:last_photo';
@@ -95,7 +95,6 @@ export default function SolicitarServico({ navigation, user }) {
 
         setLoading(true);
         try {
-            const all = JSON.parse(await AsyncStorage.getItem(SOLICITACOES_KEY) || '[]');
             const nova = {
                 id: novoId(),
                 clienteId: user.id,
