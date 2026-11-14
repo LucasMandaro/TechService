@@ -14,12 +14,13 @@ import { signOut, updatePassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { initDb } from './database';
-import { sincronizar, uploadFoto } from './sync';
+import { sincronizar } from './sync';
+import { fotoParaBase64, paraDataUri } from './fotos.js';
 import Perfil from './components/Perfil.js';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function AppConteudo() {
   const [session, setSession] = useState(null);
   const [contaLembrada, setContaLembrada] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -64,9 +65,9 @@ export default function App() {
             await AsyncStorage.removeItem(STORAGE_KEYS.LAST_ACCOUNT);
           }
         }
-      } catch(e){
+      } catch (e) {
         console.log('[init] ERRO:', e?.stack || e);
-      }finally {
+      } finally {
         setCarregando(false);
       }
     })();
@@ -107,18 +108,20 @@ export default function App() {
         await updatePassword(usuarioAuth, senha);
       }
 
-      if (perfil.foto?.uri && !perfil.foto.uri.startsWith('http')) {
+      const dadosRemotos = { nome: perfil.nome, email: perfil.email };
+
+      if (perfil.foto?.uri && !perfil.foto.uri.startsWith('data:')) {
         try {
-          const url = await uploadFoto(perfil.foto.uri, `perfis/${usuarioAuth.uid}.jpg`);
-          perfil.foto = { uri: url };
+          const b64 = await fotoParaBase64(perfil.foto.uri, [{ largura: 300, qualidade: 0.5 }]);
+          perfil.foto = { uri: paraDataUri(b64) };
         } catch (e) {
-          console.log('Foto de perfil mantida só no aparelho:', e?.code || e?.message);
+          console.log('Foto de perfil mantida só no aparelho:', e?.message);
         }
       }
+      if (perfil.foto?.uri?.startsWith('data:')) {
+        dadosRemotos.fotoParaBase64 = perfil.foto.uri.split(',')[1];
+      }
 
-      const dadosRemotos = { nome: perfil.nome, email: perfil.email };
-      if (perfil.foto?.uri?.startsWith('http'))
-        dadosRemotos.foto = perfil.foto;
       await setDoc(doc(db, 'users', usuarioAuth.uid), dadosRemotos, { merge: true });
 
       const sessionUser = {
@@ -141,9 +144,16 @@ export default function App() {
       } else if (error.code === 'auth/weak-password') {
         Alert.alert('Senha', 'Use pelo menos 6 caracteres.')
       } else {
-        Alert.alert('Erro', 'Não foi possivel salvar as alterações do perfil.')
+        Alert.alert('Erro', 'Não foi possível salvar as alterações do perfil.')
       }
     }
+  }
+
+  async function onTrocarModo(modo) {
+    const sessionUser = { ...session, modo };
+    await AsyncStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(sessionUser));
+    await AsyncStorage.setItem(STORAGE_KEYS.LAST_ACCOUNT, JSON.stringify(sessionUser));
+    setSession(sessionUser);
   }
 
   async function logout() {
@@ -192,7 +202,7 @@ export default function App() {
     return (
       <>
         <StatusBar barStyle="dark-content" />
-        <BottomTabs user={session} onUpdateUser={onUpdateUser} onLogout={logout} />
+        <BottomTabs user={session} onUpdateUser={onUpdateUser} onLogout={logout} onTrocarModo={onTrocarModo} />
       </>
     );
   }
@@ -232,6 +242,22 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+let BarraNavegacao = null;
+try {
+  BarraNavegacao = require('expo-navigation-bar').NavigationBar;
+} catch {
+  BarraNavegacao = null;
+}
+
+export default function App() {
+  return (
+    <>
+      {BarraNavegacao && <BarraNavegacao hidden />}
+      <AppConteudo />
+    </>
   );
 }
 

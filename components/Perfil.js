@@ -6,7 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 const LAST_PHOTO_KEY = '@techservice:last_photo';
 
-export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
+export default function Perfil({ navigation, user, onUpdateUser, onLogout, onTrocarModo }) {
+    const modoTecnico = user.modo === 'tecnico';
     const [editando, setEditando] = useState(false);
     const [nome, setNome] = useState(user.nome || '');
     const [email, setEmail] = useState(user.email || '');
@@ -199,6 +200,20 @@ export default function Perfil({ navigation, user, onUpdateUser, onLogout }) {
                             <Text style={styles.infoValue}>{user.email}</Text>
                         </View>
 
+                        <View style={styles.infoCard}>
+                            <Text style={styles.infoLabel}>Modo atual</Text>
+                            <Text style={styles.infoValue}>{modoTecnico ? '🔧 Técnico' : '🧰 Cliente'}</Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.modoButton}
+                            onPress={() => onTrocarModo(modoTecnico ? 'cliente' : 'tecnico')}
+                        >
+                            <Text style={styles.editText}>
+                                {modoTecnico ? 'Mudar para modo Cliente' : 'Mudar para modo Técnico'}
+                            </Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity style={styles.editButton} onPress={() => setEditando(true)}>
                             <Text style={styles.editText}>Editar perfil</Text>
                         </TouchableOpacity>
@@ -314,6 +329,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
         marginTop: 15
+    },
+    modoButton: {
+        height: 52,
+        borderRadius: 12,
+        backgroundColor: '#0f172a',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        marginTop: 5
     },
     editText: { color: '#fff', fontWeight: '800' },
     saveButton: {

@@ -1,23 +1,25 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import { criarSolicitacao, listarPorCliente, novoId } from '../database';
+import { criarSolicitacao, novoId } from '../database';
 import { sincronizar } from '../sync';
 
 
 const LAST_PHOTO_KEY = '@techservice:last_photo';
 
-const STATUS_COLORS = {
-    Pendente: {
-        bg: '#fef3c7',
-        text: '#92400e'
-    },
-    'Concluída': {
-        bg: '#dcfce7',
-        text: '#166534'
+async function buscarEndereco(coords) {
+    try {
+        const [e] = await Location.reverseGeocodeAsync({
+            latitude: coords.latitude,
+            longitude: coords.longitude
+        });
+        if (!e) return null;
+        const rua = [e.street, e.streetNumber].filter(Boolean).join(', ');
+        return [rua, e.district, e.city || e.subregion].filter(Boolean).join(' - ') || null;
+    } catch {
+        return null;
     }
 }
 
@@ -27,22 +29,10 @@ export default function SolicitarServico({ navigation, user }) {
     const [foto, setFoto] = useState(null);
     const [loading, setLoading] = useState(false);
     const [buscandoLocal, setBuscandoLocal] = useState(false);
-    const [expandido, setExpandido] = useState(true);
-    const [historico, setHistorico] = useState([]);
-    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         capturarLocalizacao();
     }, []);
-
-    const carregarHistorico = useCallback(async () => {
-        setHistorico(await listarPorCliente(user.id));
-    }, [user.id]);
-
-    useFocusEffect(useCallback(() => {
-        carregarHistorico();
-        sincronizar().then((ok) => ok && carregarHistorico());
-    }, [carregarHistorico]));
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', async () => {
@@ -100,6 +90,7 @@ export default function SolicitarServico({ navigation, user }) {
                 clienteId: user.id,
                 clienteNome: user.nome,
                 descricao: descricao.trim(),
+                endereco: await buscarEndereco(location),
                 location,
                 foto,
                 status: 'Pendente',
@@ -108,28 +99,23 @@ export default function SolicitarServico({ navigation, user }) {
             await criarSolicitacao(nova);
             setDescricao('');
             setFoto(null);
-            setExpandido(false);
-            await carregarHistorico();
-            sincronizar().then((ok) => ok && carregarHistorico());
-            Alert.alert('Solicitação enviada', 'Um técnico vai atender seu chamado em breve.');
+            sincronizar();
+            Alert.alert('Solicitação enviada', 'Um técnico vai atender seu chamado em breve. Acompanhe na aba Histórico.');
         } finally {
             setLoading(false);
         }
     }
 
-    const formulario = (
-        <View>
+    return (
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+        >
             <Text style={styles.title}>Solicitar serviço técnico</Text>
             <Text style={styles.sub}>Olá, {user.nome?.split(' ')[0]}</Text>
 
-            <TouchableOpacity style={styles.toggle} onPress={() => setExpandido((v) => !v)}>
-                <Text style={styles.toggleText}>
-                    {expandido ? '▲  Recolher formulário' : '▼  Nova solicitação'}
-                </Text>
-            </TouchableOpacity>
-
-            {expandido && (
-                <View style={styles.form}>
+            <View style={styles.form}>
                     <Text style={styles.label}>Descrição do problema *</Text>
                     <TextInput
                         style={[styles.input, styles.textarea]}
@@ -191,51 +177,7 @@ export default function SolicitarServico({ navigation, user }) {
                         <Text style={styles.saveText}>{loading ? 'Enviando...' : 'Enviar solicitação'}</Text>
                     </TouchableOpacity>
                 </View>
-            )}
-
-            <Text style={styles.section}>Meu histórico ({historico.length})</Text>
-        </View>
-    )
-
-    return (
-        <FlatList
-            style={styles.container}
-            contentContainerStyle={styles.content}
-            data={historico}
-            keyExtractor={(item) => item.id}
-            ListHeaderComponent={formulario}
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={async () => {
-                        setRefreshing(true);
-                        await sincronizar();
-                        await carregarHistorico();
-                        setRefreshing(false);
-                    }}
-                />
-            }
-            ListEmptyComponent={<Text style={styles.empty}>Você ainda não fez nenhuma solicitação.</Text>}
-            renderItem={({ item }) => {
-                const cor = STATUS_COLORS[item.status] || STATUS_COLORS.Pendente;
-                return (
-                    <View style={styles.historicoCard}>
-                        <View style={styles.cardTop}>
-                            <Text numberOfLines={1} style={styles.cardTitle}>{item.descricao}</Text>
-                            <Text style={[styles.badge, { backgroundColor: cor.bg, color: cor.text }]}>
-                                {item.status}
-                            </Text>
-                        </View>
-                        <Text style={styles.cardMeta}>
-                            {new Date(item.createdAt).toLocaleString('pt-BR')}
-                        </Text>
-                        {item.status === 'Concluída' && item.fotoConclusao && (
-                            <Image source={{ uri: item.fotoConclusao.uri }} style={styles.cardPhoto} />
-                        )}
-                    </View>
-                );
-            }}
-        />
+        </ScrollView>
     );
 }
 

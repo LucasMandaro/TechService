@@ -5,91 +5,96 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import SolicitarServico from './components/SolicitarServico';
-import Solicitacoes from './components/Solicitacoes';
+import TecnicoServico from './components/TecnicoServico';
+import Historico from './components/Historico';
 import DetalheSolicitacao from './components/DetalheSolicitacao';
 import Perfil from './components/Perfil';
 import Camera from './components/CameraScreen';
 
-const ClienteStack = createNativeStackNavigator();
-const TecnicoStack = createNativeStackNavigator();
-const UsuarioStack = createNativeStackNavigator();
+const HistoricoStack = createNativeStackNavigator();
+const ServicoStack = createNativeStackNavigator();
+const PerfilStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function ClienteStackScreen({ user }) {
+function HistoricoStackScreen({ user }) {
     return (
-        <ClienteStack.Navigator screenOptions={{ headerShown: false }}>
-            <ClienteStack.Screen name="SolicitarServico">
-                {(props) => <SolicitarServico {...props} user={user} />}
-            </ClienteStack.Screen>
-            <ClienteStack.Screen name="Camera" component={Camera} />
-        </ClienteStack.Navigator>
-    );
-}
-
-function TecnicoStackScreen({ user }) {
-    return (
-        <TecnicoStack.Navigator screenOptions={{ headerShown: false }}>
-            <TecnicoStack.Screen name="Solicitacoes">
-                {(props) => <Solicitacoes {...props} user={user} />}
-            </TecnicoStack.Screen>
-            <TecnicoStack.Screen name="DetalheSolicitacao">
+        <HistoricoStack.Navigator screenOptions={{ headerShown: false }}>
+            <HistoricoStack.Screen name="HistoricoLista">
+                {(props) => <Historico {...props} user={user} />}
+            </HistoricoStack.Screen>
+            <HistoricoStack.Screen name="DetalheSolicitacao">
                 {(props) => <DetalheSolicitacao {...props} user={user} />}
-            </TecnicoStack.Screen>
-            <TecnicoStack.Screen name="Camera" component={Camera} />
-        </TecnicoStack.Navigator>
+            </HistoricoStack.Screen>
+            <HistoricoStack.Screen name="Camera" component={Camera} />
+        </HistoricoStack.Navigator>
     );
 }
 
-function UsuarioStackScreen({ user, onUpdateUser, onLogout }) {
+function ServicoStackScreen({ user }) {
+    const tecnico = user.modo === 'tecnico';
     return (
-        <UsuarioStack.Navigator screenOptions={{ headerShown: false }}>
-            <UsuarioStack.Screen name="Perfil">
-                {(props) => (
-                    <Perfil {...props} user={user} onUpdateUser={onUpdateUser} onLogout={onLogout} />
-                )}
-            </UsuarioStack.Screen>
-            <UsuarioStack.Screen name="Camera" component={Camera} />
-        </UsuarioStack.Navigator>
+        <ServicoStack.Navigator screenOptions={{ headerShown: false }}>
+            <ServicoStack.Screen name={tecnico ? 'TecnicoServico' : 'SolicitarServico'}>
+                {(props) => tecnico
+                    ? <TecnicoServico {...props} user={user} />
+                    : <SolicitarServico {...props} user={user} />}
+            </ServicoStack.Screen>
+            <ServicoStack.Screen name="DetalheSolicitacao">
+                {(props) => <DetalheSolicitacao {...props} user={user} />}
+            </ServicoStack.Screen>
+            <ServicoStack.Screen name="Camera" component={Camera} />
+        </ServicoStack.Navigator>
     );
 }
 
-// Ícones em emoji, para não depender de nenhuma lib de ícones nova.
-const ICONS = {
-    Cliente: '🧰',
-    Tecnico: '🔧',
-    Usuario: '👤'
-};
+function PerfilStackScreen({ user, onUpdateUser, onLogout, onTrocarModo }) {
+    return (
+        <PerfilStack.Navigator screenOptions={{ headerShown: false }}>
+            <PerfilStack.Screen name="PerfilHome">
+                {(props) => (
+                    <Perfil {...props} user={user} onUpdateUser={onUpdateUser}
+                        onLogout={onLogout} onTrocarModo={onTrocarModo} />
+                )}
+            </PerfilStack.Screen>
+            <PerfilStack.Screen name="Camera" component={Camera} />
+        </PerfilStack.Navigator>
+    );
+}
 
-function TabIcon({ routeName, focused }) {
+function TabIcon({ emoji, focused }) {
     return (
         <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-            <Text style={styles.iconEmoji}>{ICONS[routeName]}</Text>
+            <Text style={styles.iconEmoji}>{emoji}</Text>
         </View>
     );
 }
 
-export default function BottomTabs({ user, onUpdateUser, onLogout }) {
+export default function BottomTabs({ user, onUpdateUser, onLogout, onTrocarModo }) {
+    const tecnico = user.modo === 'tecnico';
+    const emojis = { Historico: '🕘', Servico: tecnico ? '🔧' : '🧰', Perfil: '👤' };
     return (
         <NavigationContainer>
             <Tab.Navigator
+                initialRouteName="Servico"
                 screenOptions={({ route }) => ({
                     headerShown: false,
                     tabBarActiveTintColor: '#2563eb',
                     tabBarInactiveTintColor: '#64748b',
                     tabBarLabelStyle: styles.label,
                     tabBarStyle: styles.tabBar,
-                    tabBarIcon: ({ focused }) => <TabIcon routeName={route.name} focused={focused} />
+                    tabBarIcon: ({ focused }) => <TabIcon emoji={emojis[route.name]} focused={focused} />
                 })}
             >
-                <Tab.Screen name="Cliente" options={{ tabBarLabel: 'Cliente' }}>
-                    {() => <ClienteStackScreen user={user} />}
+                <Tab.Screen name="Historico" options={{ tabBarLabel: 'Histórico' }}>
+                    {() => <HistoricoStackScreen user={user} />}
                 </Tab.Screen>
-                <Tab.Screen name="Tecnico" options={{ tabBarLabel: 'Técnico' }}>
-                    {() => <TecnicoStackScreen user={user} />}
+                <Tab.Screen name="Servico" options={{ tabBarLabel: 'Serviço' }}>
+                    {() => <ServicoStackScreen user={user} />}
                 </Tab.Screen>
-                <Tab.Screen name="Usuario" options={{ tabBarLabel: 'Usuário' }}>
+                <Tab.Screen name="Perfil" options={{ tabBarLabel: 'Perfil' }}>
                     {() => (
-                        <UsuarioStackScreen user={user} onUpdateUser={onUpdateUser} onLogout={onLogout} />
+                        <PerfilStackScreen user={user} onUpdateUser={onUpdateUser}
+                            onLogout={onLogout} onTrocarModo={onTrocarModo} />
                     )}
                 </Tab.Screen>
             </Tab.Navigator>
