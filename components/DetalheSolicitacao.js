@@ -11,6 +11,8 @@ const LAST_PHOTO_KEY = '@techservice:last_photo';
 export default function DetalheSolicitacao({ navigation, route, user }) {
     const { solicitacaoId } = route.params;
     const [solicitacao, setSolicitacao] = useState(null);
+    const [fotoPreparada, setFotoPreparada] = useState(null);
+    const [concluindo, setConcluindo] = useState(false);
 
     const load = useCallback(async () => {
         setSolicitacao(await buscarPorId(solicitacaoId));
@@ -34,14 +36,13 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
                     photo.uri &&
                     photo.solicitacaoId === solicitacaoId
                 ) {
-                    await concluir(photo);
+                    setFotoPreparada({ uri: photo.uri });
                     await AsyncStorage.removeItem(LAST_PHOTO_KEY);
                     }
                 }catch (error){
                     console.log('erro ao processar foto de conclusão:', error);
                 }
             })()
-            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [user.id, solicitacaoId])
     );
 
@@ -53,20 +54,18 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
         });
     }
 
-    async function concluir(fotoConclusao) {
-        await concluirSolicitacao(solicitacaoId, fotoConclusao);
-        sincronizar();
-        await load();
-        Alert.alert('Atendimento Concluido', 'A solicitação foi marcada como concluida.');
-    }
-
-    function marcarConcluida() {
-        if (solicitacao.status === 'Concluída') return;
-        Alert.alert(
-            'Concluir atendimento',
-            'É necessário tirar uma foto do aparelho ou do local para confirmar a conclusão.',
-            [{ text: 'Cancelar' }, { text: 'Tirar foto', onPress: tirarFotoConclusao }]
-        );
+    async function concluir() {
+        if (!fotoPreparada || concluindo) return;
+        setConcluindo(true);
+        try {
+            await concluirSolicitacao(solicitacaoId, fotoPreparada);
+            setFotoPreparada(null);
+            sincronizar();
+            await load();
+            Alert.alert('Atendimento concluído', 'A solicitação foi marcada como concluída.');
+        } finally {
+            setConcluindo(false);
+        }
     }
 
     if (!solicitacao) {
@@ -93,6 +92,13 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
 
             <Text style={styles.sectionLabel}>Descrição do serviço</Text>
             <Text style={styles.descricao}>{solicitacao.descricao}</Text>
+
+            {!!solicitacao.endereco && (
+                <>
+                    <Text style={styles.sectionLabel}>Endereço</Text>
+                    <Text style={styles.descricao}>📍 {solicitacao.endereco}</Text>
+                </>
+            )}
 
             {solicitacao.foto && (
                 <>
@@ -130,10 +136,25 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
                 </>
             )}
 
-            {solicitacao.status !== 'Concluída' && (
-                <TouchableOpacity style={styles.concluirButton} onPress={marcarConcluida}>
-                    <Text style={styles.concluirText}>Marcar como concluído</Text>
-                </TouchableOpacity>
+            {solicitacao.status === 'Aceita' && solicitacao.tecnicoId === user.id && (
+                <>
+                    {fotoPreparada ? (
+                        <>
+                            <Text style={styles.sectionLabel}>Foto de conclusão (prévia)</Text>
+                            <Image source={{ uri: fotoPreparada.uri }} style={styles.photo} />
+                            <TouchableOpacity style={styles.trocarButton} onPress={tirarFotoConclusao} disabled={concluindo}>
+                                <Text style={styles.trocarText}>Trocar foto</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.concluirButton} onPress={concluir} disabled={concluindo}>
+                                <Text style={styles.concluirText}>{concluindo ? 'Concluindo...' : 'Concluir atendimento'}</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <TouchableOpacity style={styles.concluirButton} onPress={tirarFotoConclusao}>
+                            <Text style={styles.concluirText}>Tirar foto para concluir</Text>
+                        </TouchableOpacity>
+                    )}
+                </>
             )}
         </ScrollView>
     );
@@ -167,6 +188,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 30
     },
+    trocarButton: {
+        height: 50,
+        borderRadius: 13,
+        borderWidth: 2,
+        borderColor: '#2563eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 14
+    },
+    trocarText: { color: '#2563eb', fontWeight: '800', fontSize: 16 },
     concluirText: { color: '#fff', fontWeight: '800', fontSize: 16 },
     empty: { color: '#64748b', textAlign: 'center', marginTop: 50 }
 });

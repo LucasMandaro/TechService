@@ -15,11 +15,14 @@ export default function CameraScreen({ navigation, route }) {
     );
     const [facing, setFacing] = useState('back');
     const [saving, setSaving] = useState(false);
+    const savingRef = useRef(false);
+    const [preview, setPreview] = useState(null);
     const tipo = route.params?.photoType || 'Foto';
 
     async function takePicture() {
         if (!cameraRef.current || saving)
             return;
+        savingRef.current = true;
         setSaving(true);
         try {
             if (!permission?.granted) {
@@ -27,33 +30,46 @@ export default function CameraScreen({ navigation, route }) {
                 if (!p.granted)
                     throw new Error('Permissão da câmera negada.');
             }
-            let mp = mediaPermission;
-            if (!mp?.granted)
-                mp = await requestMediaPermission();
-            if (!mp?.granted)
-                throw new Error('Permissão para salvar na galeria negada.');
             const photo = await cameraRef.current.takePictureAsync({
                 quality: 0.8,
                 skipProcessing: false
             });
             if (!photo?.uri)
-                throw new Error('não foi possível capturar a foto.');
-            await MediaLibrary.saveToLibraryAsync(photo.uri);
+                throw new Error('Não foi possível capturar a foto.');
+            setPreview(photo.uri);
+        } catch (e) {
+            Alert.alert('Erro', e.message || 'Falha ao capturar foto.');
+        } finally {
+            savingRef.current = false;
+            setSaving(false);
+        }
+    }
+
+    async function usarFoto() {
+        if (!preview || saving)
+            return;
+        setSaving(true);
+        try {
+            try {
+                let mp = mediaPermission;
+                if (!mp?.granted)
+                    mp = await requestMediaPermission();
+                if (mp?.granted)
+                    await MediaLibrary.saveToLibraryAsync(preview);
+            } catch (e) {
+                console.log('Foto não salva na galeria:', e?.message);
+            }
             await AsyncStorage.setItem(STORAGE_KEYS.LAST_PHOTO, JSON.stringify({
-                uri: photo.uri,
+                uri: preview,
                 tipo,
-                owner: route.params?.userId, 
+                owner: route.params?.userId,
                 solicitacaoId: route.params?.solicitacaoId,
                 createdAt: Date.now()
             }));
-            Alert.alert('Foto salva', 'A foto foi slava na galeria. volte para a visita para vê-la anexada.',
-                [{
-                    text: 'OK',
-                    onPress: () => navigation.goBack()
-                }]
-            );
+            if (navigation.canGoBack())
+                navigation.goBack();
         } catch (e) {
-            Alert.alert('Erro', e.message || 'Falha ao salvar foto.');
+            Alert.alert('Erro', e.message || 'Falha ao anexar a foto.');
         } finally {
             setSaving(false);
         }
@@ -76,10 +92,33 @@ export default function CameraScreen({ navigation, route }) {
                 </Text>
             </TouchableOpacity>
         </View>;
+    if (preview)
+        return <SafeAreaView style={styles.container}>
+            <Image source={{ uri: preview }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+            <View style={styles.previewTop}>
+                <Text style={styles.previewTitle}>Prévia da foto ({tipo})</Text>
+            </View>
+            <View style={styles.previewButtons}>
+                <TouchableOpacity
+                    style={[styles.previewBtn, styles.previewRetake]}
+                    onPress={() => setPreview(null)}
+                    disabled={saving}
+                >
+                    <Text style={styles.previewRetakeText}>Tirar outra</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.previewBtn, styles.previewUse]}
+                    onPress={usarFoto}
+                    disabled={saving}
+                >
+                    <Text style={styles.previewUseText}>{saving ? 'Anexando...' : 'Usar foto'}</Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>;
     return <SafeAreaView style={styles.container}>
         <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} mode="picture" />
         <View style={styles.top}>
-            <TouchableOpacity 
+            <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={styles.close}
             >
@@ -87,14 +126,14 @@ export default function CameraScreen({ navigation, route }) {
             </TouchableOpacity>
         </View>
         <View style={styles.controls}>
-            <TouchableOpacity 
-                style={styles.flip} 
+            <TouchableOpacity
+                style={styles.flip}
                 onPress={() => setFacing((v) => v === 'back' ? 'front' : 'back')}
             >
                 <Ionicons name="camera-reverse" size={28} color="#000" />
             </TouchableOpacity>
-            <TouchableOpacity 
-                style={styles.capture} 
+            <TouchableOpacity
+                style={styles.capture}
                 onPress={takePicture} disabled={saving}
             >
                 <Ionicons name="camera" size={60} color="#000000" />
@@ -186,5 +225,52 @@ const styles = StyleSheet.create({
     },
     spacer: {
         width: 55
+    },
+    previewTop: {
+        position: 'absolute',
+        top: 40,
+        left: 0,
+        right: 0,
+        alignItems: 'center'
+    },
+    previewTitle: {
+        color: '#fff',
+        fontWeight: '800',
+        backgroundColor: 'rgba(0,0,0,.55)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 10,
+        overflow: 'hidden'
+    },
+    previewButtons: {
+        position: 'absolute',
+        left: 20,
+        right: 20,
+        bottom: 30,
+        flexDirection: 'row',
+        gap: 12
+    },
+    previewBtn: {
+        flex: 1,
+        height: 54,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    previewRetake: {
+        backgroundColor: 'rgba(255,255,255,.92)'
+    },
+    previewRetakeText: {
+        color: '#0f172a',
+        fontWeight: '800',
+        fontSize: 16
+    },
+    previewUse: {
+        backgroundColor: '#16a34a'
+    },
+    previewUseText: {
+        color: '#fff',
+        fontWeight: '800',
+        fontSize: 16
     }
 });
