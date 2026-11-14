@@ -1,9 +1,9 @@
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, where } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, db, storage } from './firebase';
+import { auth, db } from './firebase';
 import { STORAGE_KEYS } from './storage';
-import { marcarSincronizada, pendentes, upsertRemota } from './database';
+import { fotoParaBase64 } from './fotos';
+import { fotosFaltando, marcarAceita, marcarSincronizada, pendentes, salvarFotoRemota, upsertRemota } from './database';
 
 const ENVIAR_FOTOS = true;
 
@@ -16,12 +16,24 @@ function comTimeout(promise, ms = TIMEOUT_MS) {
     ]);
 }
 
-export async function uploadFoto(uri, caminho) {
-    const resp = await fetch(uri);
-    const blob = await resp.blob();
-    const r = ref(storage, caminho);
-    await comTimeout(uploadBytes(r, blob, { contentType: 'image/jpeg' }), 30000);
-    return comTimeout(getDownloadURL(r));
+async function enviarFoto(id, tipo, uri, clienteId) {
+    const base64 = await fotoParaBase64(uri);
+    console.log(`[foto ${tipo}] ${base64.length} caracteres`);
+    await comTimeout(
+        setDoc(doc(db, 'solicitacoes', id, 'fotos', tipo), {
+            base64,
+            clienteId,
+            updateAt: Date.now(),
+        }),
+        30000
+    );
+}
+
+async function baixarFoto(id, tipo) {
+    const snap = await comTimeout(getDoc(doc(db, 'solicitacoes', id, 'fotos', tipo)), 30000);
+    if (snap.exists() && snap.data().base64) {
+        await salvarFotoRemota(id, tipo, snap.data().base64);
+    }
 }
 
 async function enviarPendentes() {
@@ -29,40 +41,59 @@ async function enviarPendentes() {
 
     for (const s of lista) {
         try {
-            let fotoUrl = s.foto_url;
-            let conclusaoUrl = s.foto_conclusao_url;
+            let fotoOk = !!s.foto_url;
+            let conclusaoOK = !!s.foto_conclusao_url;
 
             if (ENVIAR_FOTOS) {
-                if (!fotoUrl && s.foto_uri)
-                    fotoUrl = await uploadFoto(s.foto_uri, `solicitacoes/${s.id}/aparelho.jpg`);
-                if (!conclusaoUrl && s.foto_conclusao_uri)
-                    conclusaoUrl = await uploadFoto(s.foto_conclusao_uri, `solicitacoes/${s.id}/conclusao.jpg`);
+                if (!fotoOk && s.foto_uri) {
+                    await enviarFoto(s.id, 'aparelho', s.foto_uri, s.cliente_id);
+                    fotoOk = true;
+                }
+
+                if (!conclusaoOK && s.foto_conclusao_uri) {
+                    await enviarFoto(s.id, 'conclusao', s.foto_conclusao_uri, s.cliente_id);
+                    conclusaoOK = true;
+                }
             }
 
+            console.log('[local]', s.latitude, s.longitude, Object.keys(s).join(','));
             const payload = {
                 id: s.id,
                 clienteId: s.cliente_id,
                 clienteNome: s.cliente_nome ?? null,
                 descricao: s.descricao,
-                location: s.latitude != null ? { latitude: s.latitude, longitude: s.longitude } : null,
-                foto: fotoUrl ? { url: fotoUrl } : null,
+                endereco: s.endereco ?? null,
+                tecnicoId: s.tecnico_id ?? null,
+                tecnicoNome: s.tecnico_nome ?? null,
+                location:
+                    s.latitude != null && s.longitude != null &&
+                        Number.isFinite(Number(s.latitude)) && Number.isFinite(Number(s.longitude))
+                        ? { latitude: Number(s.latitude), longitude: Number(s.longitude) }
+                        : null,
                 status: s.status,
-                fotoConclusao: conclusaoUrl ? { url: conclusaoUrl } : null,
                 createdAt: s.created_at,
                 concludedAt: s.concluded_at ?? null,
                 updatedAt: s.updated_at,
             };
 
+            if (fotoOk) payload.temFoto = true;
+            if (conclusaoOK) payload.temFotoConclusao = true;
+
+            const indefinidos = Object.entries(payload).filter(([, v]) => v === undefined).map(([k]) => k);
+            if (indefinidos.length)
+                console.log('Campos undefined:', indefinidos);
+
             await comTimeout(setDoc(doc(db, 'solicitacoes', s.id), payload, { merge: true }));
-            await marcarSincronizada(s.id, s.updated_at, fotoUrl, conclusaoUrl);
+
+            await marcarSincronizada(
+                s.id,
+                s.updated_at,
+                !s.foto_url && fotoOk ? 'enviada' : null,
+                !s.foto_conclusao_url && conclusaoOK ? 'enviada' : null
+            );
         } catch (e) {
             if (e?.message === 'timeout') throw e;
-            console.log(
-                `Falha ao enviar solicitação ${s.id}:`, 
-                e?.code,
-                e?.message,
-                e?.serverResponse || e?.customData?.serverResponse
-            );
+            console.log(`Falha ao enviar solicitação ${s.id} (tentar de novo depois):`, e?.code, e?.message);
         }
     }
 }
@@ -76,10 +107,36 @@ async function baixarAtualizacoes() {
         where('updatedAt', '>', Math.max(0, ultimo - 60000))
     );
     const snap = await comTimeout(getDocs(q));
-    for (const d of snap.docs)
-        await upsertRemota(d.data());
+
+    for (const d of snap.docs) {
+        const dados = d.data();
+        await upsertRemota(dados);
+
+        if (ENVIAR_FOTOS) {
+            for (const tipo of await fotosFaltando(dados)) {
+                await baixarFoto(dados.id, tipo);
+            }
+        }
+    }
 
     await AsyncStorage.setItem(STORAGE_KEYS.LAST_SYNC, String(inicio));
+}
+
+export async function aceitarSolicitacao(id, tecnico) {
+    const ref = doc(db, 'solicitacoes', id);
+    const agora = Date.now();
+    await comTimeout(runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('indisponivel');
+        if (snap.data().status !== 'Pendente') throw new Error('indisponivel');
+        tx.update(ref, {
+            status: 'Aceita',
+            tecnicoId: tecnico.id,
+            tecnicoNome: tecnico.nome ?? null,
+            updatedAt: agora,
+        });
+    }));
+    await marcarAceita(id, tecnico, agora);
 }
 
 let emAndamento = null;
@@ -94,7 +151,7 @@ export function sincronizar() {
                 await baixarAtualizacoes();
                 return true;
             } catch (e) {
-                console.log('Sincronização adiada:', e?.code || e?.message);
+                console.log('Sincronização adiada:', e?.stack || e?.message || e);
                 return false;
             } finally {
                 emAndamento = null;
