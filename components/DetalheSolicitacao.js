@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, DeviceEventEmitter, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -62,7 +62,10 @@ export default function DetalheSolicitacao({ navigation, route, user }) {
             setFotoPreparada(null);
             sincronizar();
             await load();
-            Alert.alert('Atendimento concluído', 'A solicitação foi marcada como concluída.');
+            DeviceEventEmitter.emit('solicitacao-atualizada');
+            Alert.alert('Atendimento concluído', 'A solicitação foi marcada como concluída.', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+            ], { cancelable: false });
         } finally {
             setConcluindo(false);
         }

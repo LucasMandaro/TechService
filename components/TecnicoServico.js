@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,6 +33,8 @@ export default function TecnicoServico({ navigation, user }) {
     const [ativa, setAtiva] = useState(null);
     const [aceitando, setAceitando] = useState(false);
     const [rota, setRota] = useState(null);
+    const [mapKey, setMapKey] = useState(0);
+    const tinhaRota = useRef(false);
 
     useEffect(() => {
         (async () => {
@@ -96,6 +98,34 @@ export default function TecnicoServico({ navigation, user }) {
     const restantes = ativa ? ordenadas.length : Math.max(0, ordenadas.length - 1);
 
     const rotaAtual = rota && rota.destinoId === atual?.id ? rota : null;
+
+    useEffect(() => {
+        if (tinhaRota.current && !rotaAtual) {
+            console.log('[mapa] rota removida: recriando o mapa');
+            setMapKey((k) => k + 1);
+        }
+        tinhaRota.current = !!rotaAtual;
+    }, [!!rotaAtual]);
+
+    useEffect(() => {
+        console.log('[mapa] estado:', JSON.stringify({
+            ativa: ativa?.id ?? null,
+            atual: atual?.id ?? null,
+            pendentes: ordenadas.length,
+            rota: !!rotaAtual
+        }));
+    }, [ativa?.id, atual?.id, ordenadas.length, !!rotaAtual]);
+
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('solicitacao-atualizada', () => {
+            console.log('[mapa] solicitação atualizada: limpando rota e recriando o mapa');
+            setRota(null);
+            setAtiva(null);
+            setMapKey((k) => k + 1);
+            load();
+        });
+        return () => sub.remove();
+    }, [load]);
 
     useEffect(() => {
         let cancelado = false;
@@ -169,6 +199,7 @@ export default function TecnicoServico({ navigation, user }) {
     return (
         <View style={styles.container}>
             <MapView
+                key={mapKey}
                 ref={mapRef}
                 style={StyleSheet.absoluteFill}
                 showsUserLocation={!!pos}
@@ -189,7 +220,7 @@ export default function TecnicoServico({ navigation, user }) {
                     />
                 ))}
                 {rotaAtual && (
-                    <Polyline coordinates={rotaAtual.coordenadas} strokeColor="#2563eb" strokeWidth={5} />
+                    <Polyline key={rotaAtual.destinoId} coordinates={rotaAtual.coordenadas} strokeColor="#2563eb" strokeWidth={5} />
                 )}
                 {ativa?.location && (
                     <Marker coordinate={ativa.location} title={ativa.clienteNome} pinColor="#16a34a" />

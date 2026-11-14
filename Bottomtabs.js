@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SolicitarServico from './components/SolicitarServico';
 import TecnicoServico from './components/TecnicoServico';
@@ -69,7 +70,8 @@ function TabIcon({ emoji, focused }) {
     );
 }
 
-export default function BottomTabs({ user, onUpdateUser, onLogout, onTrocarModo }) {
+function Abas({ user, onUpdateUser, onLogout, onTrocarModo }) {
+    const insets = useSafeAreaInsets();
     const tecnico = user.modo === 'tecnico';
     const emojis = { Historico: '🕘', Servico: tecnico ? '🔧' : '🧰', Perfil: '👤' };
     return (
@@ -81,7 +83,7 @@ export default function BottomTabs({ user, onUpdateUser, onLogout, onTrocarModo 
                     tabBarActiveTintColor: '#2563eb',
                     tabBarInactiveTintColor: '#64748b',
                     tabBarLabelStyle: styles.label,
-                    tabBarStyle: styles.tabBar,
+                    tabBarStyle: [styles.tabBar, { height: 62 + insets.bottom, paddingBottom: 8 + insets.bottom }],
                     tabBarIcon: ({ focused }) => <TabIcon emoji={emojis[route.name]} focused={focused} />
                 })}
             >
@@ -102,11 +104,17 @@ export default function BottomTabs({ user, onUpdateUser, onLogout, onTrocarModo 
     );
 }
 
+export default function BottomTabs(props) {
+    return (
+        <SafeAreaProvider>
+            <Abas {...props} />
+        </SafeAreaProvider>
+    );
+}
+
 const styles = StyleSheet.create({
     tabBar: {
-        height: 70,
         paddingTop: 8,
-        paddingBottom: 12,
         backgroundColor: '#ffffff',
         borderTopWidth: 1,
         borderTopColor: '#e2e8f0'
