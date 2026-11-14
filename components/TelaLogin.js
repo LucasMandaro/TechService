@@ -39,7 +39,7 @@ export default function TelaLogin({ navigation, onLogin }) {
                     Alert.alert('Muitas tentativas', 'Aguarde um pouco e tente de novo.');
                 } else {
                     console.log('Erro ao fazer login:', e);
-                    Alert.alert('Erro', 'Não foi possivel realizar o login.');
+                    Alert.alert('Erro', 'Não foi possível realizar o login.');
                 }
                 return;
             }
@@ -59,7 +59,12 @@ export default function TelaLogin({ navigation, onLogin }) {
             let perfil = {};
             try {
                 const snap = await getDoc(doc(db, 'users', cred.user.uid));
-                if (snap.exists()) perfil = snap.data();
+                if (snap.exists())
+                    perfil = snap.data();
+                if (perfil.fotoBase64) {
+                    perfil = { ...perfil, foto: { uri: `data:image/jpeg;base64,${perfil.fotoBase64}` } };
+                    delete perfil.fotoBase64
+                }
             } catch (e) {
                 console.log('Perfil indisponível:', e?.code || e?.message);
             }
@@ -72,7 +77,7 @@ export default function TelaLogin({ navigation, onLogin }) {
             });
         } catch (error) {
             console.log('Erro ao fazer login:', error);
-            Alert.alert('Erro', 'Não foi possivel realizar o login.');
+            Alert.alert('Erro', 'Não foi possível realizar o login.');
         } finally {
             setAtivo(false);
         }
@@ -82,7 +87,7 @@ export default function TelaLogin({ navigation, onLogin }) {
         const hardware = await LocalAuthentication.hasHardwareAsync();
         const enrolled = hardware && await LocalAuthentication.isEnrolledAsync();
         if (!enrolled) {
-            Alert.alert('Biometria indisponível', 'Cadastre uma biometria no dispositivo ou entre com sua senha');
+            Alert.alert('Biometria indisponível', 'Cadastre uma biometria no dispositivo ou entre com sua senha.');
             return;
         }
         if (!usuario.trim() || !senha) {
