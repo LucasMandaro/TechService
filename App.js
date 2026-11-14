@@ -119,7 +119,7 @@ function AppConteudo() {
         }
       }
       if (perfil.foto?.uri?.startsWith('data:')) {
-        dadosRemotos.fotoParaBase64 = perfil.foto.uri.split(',')[1];
+        dadosRemotos.fotoBase64 =perfil.foto.uri.split(',')[1];
       }
 
       await setDoc(doc(db, 'users', usuarioAuth.uid), dadosRemotos, { merge: true });
